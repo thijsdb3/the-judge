@@ -1,0 +1,24 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 85vh;
+    gap: 20px;
+}
+
+
+.button {
+    padding: 20px 40px; /* Bigger buttons */
+    font-size: 24px; /* Larger text */
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Add a hover effect */
+}
+
+.button:hover {
+    background-color: #005bb5; /* Darken the button color on hover */
+}

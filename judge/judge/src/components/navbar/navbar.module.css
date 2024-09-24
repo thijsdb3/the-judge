@@ -1,0 +1,17 @@
+.container{
+    height : 100px;
+    display: flex;
+    align-items: center;
+    justify-content:  space-between;
+    background-color: red;
+}
+.logo{
+    font-size: 30px ;
+    font-weight: bold;
+}
+.username {
+    font-size: 16px;
+    padding-bottom: 2%;
+    position: relative;
+    padding-left: 250px;
+}
