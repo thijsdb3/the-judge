@@ -1,8 +1,23 @@
-import HomeBody from "@/components/homebody/HomeBody"
+"use client";
+import { useRouter } from 'next/navigation'
+import styles from "./HomePage.module.css";
+import { handleJoinGame,handleMakeGame } from "@/lib/gameid";
 
 
-export default function Home() {
+const HomePage = () => {
+  const router = useRouter();
+
   return (
-    <HomeBody/> // if more code gets into homebody consider splitting components to avoid sequential data fetching
+    <div className={styles.container}>
+      <button onClick={() => handleMakeGame(router)} className={styles.button}>
+        Make Game
+      </button>
+      <button onClick={() => handleJoinGame(router)} className={styles.button}>
+        Join Game
+      </button>
+    </div>
   );
-}
+};
+
+
+export default HomePage;
