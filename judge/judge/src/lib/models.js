@@ -1,11 +1,15 @@
 import mongoose from "mongoose";
 
-const gameIdSchema = new mongoose.Schema({
+const gameLobbiesSchema = new mongoose.Schema({
   gameid : {
     type : String,
     required : true,
     unique : true,
-  }
+  },
+    players : [ {
+    type : mongoose.Schema.Types.ObjectId ,
+    ref : "User"
+  }]
 })
 
 const userSchema = new mongoose.Schema({
@@ -30,5 +34,5 @@ const userSchema = new mongoose.Schema({
   { timestamps: true }
 );
 
-export const GameId = mongoose.models?.GameId || mongoose.model("GameId", gameIdSchema);
+export const GameLobby = mongoose.models?.GameLobby || mongoose.model("GameLobby", gameLobbiesSchema);
 export const User = mongoose.models?.User || mongoose.model("User", userSchema);

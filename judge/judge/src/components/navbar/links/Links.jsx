@@ -47,6 +47,15 @@ const Links =   ({session}) => {
     <button className = {styles.menuButton} onClick  = {() => setOpen((prev) => !prev) }> Menu </button>
     {
       open && <div className = {styles.mobileLinks}>
+        {session?.user ? (
+        <>
+          <form action = {handleLogout} >
+          <button className={styles.logout}>Logout</button>
+          </form>
+        </>
+      ) : (
+        <NavLink item={{ title: "Login", path: "/login" }} />
+      )}
         {links.map((link) => (
         <NavLink item={link} key={link.title} />))}
         </div>

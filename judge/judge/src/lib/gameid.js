@@ -23,8 +23,8 @@ export async function handleJoinGame(router) {
     const response = await fetch('/api/gameid', {
       method: 'GET',
     });
-    const gameIds = await response.json();
-    const gameIdList = gameIds.map(game => game.gameid.toString());
+    const gamelobbies = await response.json();
+    const gameIdList = gamelobbies.map(game => game.gameid);
    
     if (gameIdList.includes(input)) {
       router.push(`/gamelobby/${input}`);

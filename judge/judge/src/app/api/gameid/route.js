@@ -1,13 +1,15 @@
 import connectToDB from '@/lib/utils'; 
-import { GameId } from '@/lib/models'; 
-import { getGameIds } from '@/lib/data';
+import { GameLobby } from '@/lib/models'; 
+import { getGameLobbies } from '@/lib/data';
 export async function POST(req, res) {
   await connectToDB(); 
   console.log(req.body)
   try {
     const  id  = await req.json(); 
-    const newGameId = new GameId({gameid:id} ) ;
-    await newGameId.save();
+    const newGameLobby = new GameLobby({gameid:id} ,
+      {players : []}
+     ) ;
+    await newGameLobby.save();
 
   } catch (error) {
     throw (error)
@@ -15,8 +17,8 @@ export async function POST(req, res) {
 }
 export async function GET(req) {
     try {
-      const gameids = await getGameIds();
-      return new Response(JSON.stringify(gameids), {
+      const gamelobbies = await getGameLobbies();
+      return new Response(JSON.stringify(gamelobbies), {
         status: 200,
         headers: {
           'Content-Type': 'application/json',

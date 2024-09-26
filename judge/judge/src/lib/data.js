@@ -1,4 +1,4 @@
-import { User , GameId} from "./models";
+import { User , GameLobby} from "./models";
 import connectToDB from "./utils"
 
 
@@ -26,26 +26,26 @@ export const getUsers = async()=> {
     }
 }
 
-export const getGameId = async(id) => {
+export const getGameLobby = async(id) => {
     try{
         connectToDB();
-        const gameid = await GameId.findById(id)
-        return gameid;
+        const gamelobbies = await GameLobby.findById(id)
+        return gamelobbies;
     }
     catch(err){
         console.log(err);
-        throw new Error("failed to fetch gameid!")
+        throw new Error("failed to fetch gamelobbies!")
     }
 }
 
-export const getGameIds = async()=> {
+export const getGameLobbies = async()=> {
     try{
         connectToDB();
-        const gameids = await GameId.find()
-        return gameids;
+        const gamelobbies = await GameLobby.find().lean()
+        return gamelobbies;
     }
     catch(err){
         console.log(err);
-        throw new Error("failed to fetch gameids!")
+        throw new Error("failed to fetch gamelobbies!")
     }
 }
