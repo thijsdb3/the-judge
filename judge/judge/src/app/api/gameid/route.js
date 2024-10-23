@@ -1,21 +1,28 @@
 import connectToDB from '@/lib/utils'; 
 import { GameLobby } from '@/lib/models'; 
 import { getGameLobbies } from '@/lib/data';
-export async function POST(req, res) {
+export async function POST(req) {
   await connectToDB(); 
-  console.log(req.body)
   try {
-    const  id  = await req.json(); 
+    const  id  = await req.json();
     const newGameLobby = new GameLobby({gameid:id} ,
       {players : []}
      ) ;
     await newGameLobby.save();
+    return new Response(
+      {status : 200}
+    )
 
   } catch (error) {
-    throw (error)
+    return new Response(JSON.stringify({ error: 'Failed to save game ID' }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   }
 }
-export async function GET(req) {
+export async function GET() {
     try {
       const gamelobbies = await getGameLobbies();
       return new Response(JSON.stringify(gamelobbies), {

@@ -1,6 +1,6 @@
 
 :root{
-    --bg : purple ;
+    --bg :  linear-gradient(135deg, #800080 0%, #ff1493 100%);
     --text :white ;
     --bgSoft : #2d2b42;
     --textSoft: #e5e5e5;
@@ -14,7 +14,7 @@
 
 
 body {
-    background-color: var(--bg);
+    background: var(--bg);
     color: var(--text);
 }
 
@@ -25,7 +25,6 @@ a{
 }
 
 .container{
-    background-color: rebeccapurple;
     width: 1536px;
     margin: auto;
     padding-left: 50px;

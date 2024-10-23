@@ -11,7 +11,7 @@ const login = async(credentials) => {
         connectToDB()
         const user = await  User.findOne({username: credentials.username})
         console.log(credentials.password)
-        console.log(user.password) //doesn't get saved in db smth goes wrong in signUp from  action.js
+        console.log(user.password) 
        
       if(!user){
         throw new Error("wrong credentials!");

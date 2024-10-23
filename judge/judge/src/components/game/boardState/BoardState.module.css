@@ -1,0 +1,53 @@
+/* Right box (split vertically into two halves) */
+.rightbox {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+    
+
+
+/* Background images for the upper and lower halves */
+.rightboxhalfupper {
+    height: 48%;
+    background-color: rgba(0, 0, 0, 0.1); /* Transparent background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+}
+
+.rightboxhalflower {
+    height: 48%;
+    background-color: rgba(0, 0, 0, 0.1); /* Transparent background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+}
+
+.bignumberevil {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: red;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+.bignumbergood {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: blue;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+
+/* Large number styling */

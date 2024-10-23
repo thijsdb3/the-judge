@@ -1,14 +1,35 @@
-.links{
-    display: flex;
-    align-items:center ;
-    gap :10px;
-}
 
-.logout{
-    padding:10px;
+.centerlinks {
+    display: flex;
+    justify-content: space-between;
+    position: absolute;
+    top : 30%;
+    gap : 10px;
+    left: 50%;
+    font-size: large;
+    transform: translateX(-50%);
+  }
+  
+  .rightLinks {
+    position: absolute;
+    display :inline-block;
+    right: 1%;
+    top: 30%;
     font-weight: bold;
-    cursor :pointer;
-}
+    cursor: pointer;
+  }
+
+  
+  .logout {
+    padding: 10px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .loginAndSignup {
+    display: flex;
+    gap: 15px; /* Space between the buttons */
+  }
+
 
 .menuButton{   
     display: none;
@@ -19,25 +40,25 @@
     display : none;
 }
 
-@media (max-width : 768px){
-    .links{
-        display: none;
+@media (max-width: 768px) {
+    .centerlinks, .rightLinks {
+      display: none;
     }
-    .menuButton{
-        display:block;
-        cursor:pointer;
+    .menuButton {
+      display: block;
+      cursor: pointer;
     }
-    .mobileLinks{ 
-    position : absolute;
-    top : 100 px;
-    right : 0;
-    width : 50%;
-    height : calc(100vh - 100px);
-    background-color: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;}
-}
-
+    .mobileLinks {
+      position: absolute;
+      top: 100px;
+      right: 0;
+      width: 50%;
+      height: calc(100vh - 100px);
+      background-color: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+  }

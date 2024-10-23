@@ -5,9 +5,8 @@ import {signIn, signOut}from "./auth"
 import bcrypt from "bcryptjs";
 
 export const SignUp = async (previousState,formData) => {
-    const {username,email,password, passwordRepeat}= 
+    const {username,password, passwordRepeat}= 
     Object.fromEntries(formData);
-    console.log(password)
     if(password !==passwordRepeat ){
         return {error : "password does not match"};
     }
@@ -19,15 +18,11 @@ export const SignUp = async (previousState,formData) => {
         }
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password,salt);
-        console.log("this is the hashedpassword", hashedPassword)
         const newUser = new User({
             username,
-            email,
             hashedPassword,
         });
-        console.log(newUser)
         await newUser.save();
-        console.log("saved to db");
         return {success: true};
     } catch(error){
         console.log(error);

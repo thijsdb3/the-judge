@@ -1,0 +1,227 @@
+import { NextResponse } from "next/server";
+import connectToDB from "@/lib/utils";
+import { Game, User } from "@/lib/models";
+import Pusher from "pusher";
+import { fisherYatesShuffle } from "@/lib/utils";
+
+const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
+
+const pusher = new Pusher({
+  appId: PUSHER_APP_ID,
+  key: NEXT_PUBLIC_PUSHER_KEY,
+  secret: PUSHER_SECRET,
+  cluster: "eu",
+});
+
+export async function POST(request) {
+  const { lobbyid, selectedPlayer, playerClicking } = await request.json();
+
+  await connectToDB();
+  const game = await Game.findOne({ gameid: lobbyid });
+
+  const [selectedPlayer_, playerClicking_] = await Promise.all([
+    User.findOne({ username: selectedPlayer.username }),
+    User.findOne({ username: playerClicking }),
+  ]);
+
+  if (!game || !selectedPlayer_ || !playerClicking_) {
+    return NextResponse.json(
+      {
+        error: `${
+          !game
+            ? "Game"
+            : !selectedPlayer_
+            ? "Selected player"
+            : "Player performing the action"
+        } not found`,
+      },
+      { status: 404 }
+    );
+  }
+
+  const playerClickingId = playerClicking_._id;
+  const phase = game.currentRound.phase;
+
+  const args = {
+    game: game,
+    playerClickingId: playerClickingId,
+    selectedPlayerId: selectedPlayer_._id,
+    selectedPlayerUsername: selectedPlayer_.username,
+    playerClickingUsername: playerClicking,
+    lobbyid: lobbyid,
+  };
+
+  if (
+    selectedPlayer_._id.equals(game.currentRound.judge) ||
+    playerClickingId.equals(selectedPlayer_._id)
+  ) {
+    return NextResponse.json(
+      { error: "Cannot select the judge or yourself" },
+      { status: 400 }
+    );
+  }
+
+  switch (phase) {
+    case "Judge Picks Partner":
+      handleJudgePicksPartner(args);
+      break;
+
+    case "Partner Picks Associate":
+      handlePartnerPicksAssociate(args);
+      break;
+
+    case "Associate Picks Paralegal":
+      handleAssociatePicksParalegal(args);
+      break;
+
+    case "Peek and Discard":
+      handlePeekAndDiscard(args);
+      break;
+
+    default:
+      return NextResponse.json({ error: "Invalid phase" }, { status: 400 });
+  }
+
+  await game.save();
+  return NextResponse.json({ success: true });
+}
+
+function handleJudgePicksPartner(par) {
+  if (par.playerClickingId.equals(par.game.currentRound.judge)) {
+    par.game.currentRound.partner.id = par.selectedPlayerId;
+    par.game.currentRound.phase = "Partner Picks Associate"; // Move to next phase
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Partner`
+    );
+
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+  }
+}
+
+function handlePartnerPicksAssociate(par) {
+  if (
+    par.playerClickingId.equals(par.game.currentRound.partner.id) &&
+    !par.selectedPlayerId.equals(par.game.currentRound.partner.id)
+  ) {
+    par.game.currentRound.associate.id = par.selectedPlayerId;
+    par.game.currentRound.phase = "Associate Picks Paralegal";
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Associate`
+    );
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+ 
+  }
+}
+
+function handleAssociatePicksParalegal(par) {
+  if (
+    par.playerClickingId.equals(par.game.currentRound.associate.id) &&
+    !par.selectedPlayerId.equals(par.game.currentRound.partner.id) &&
+    !par.selectedPlayerId.equals(par.game.currentRound.associate.id)
+  ) {
+    par.game.currentRound.paralegal.id = par.selectedPlayerId;
+    par.game.currentRound.phase = "Cards Selection"; // Move to next phase
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
+    );
+
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+    setUpForNextCardPhase(par);
+  }
+}
+
+function setUpForNextCardPhase(par) {
+  if (par.game.drawPile.length >= 6) {
+    par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
+    par.game.currentRound.paralegal.cards = par.game.drawPile.slice(3, 6);
+    par.game.drawPile.splice(0, 6);
+  } else if (par.game.drawPile.length >= 3) {
+    par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
+    par.game.drawPile = reshuffledeck(par.game);
+    par.game.currentRound.paralegal.cards = par.game.drawPile.slice(0, 3);
+    par.game.drawPile.splice(0, 3);
+  } else {
+    // impossible scenario with current implementation of game
+    par.game.drawPile = reshuffledeck(par.game);
+    par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
+    par.game.currentRound.paralegal.cards = par.game.drawPile.slice(3, 6);
+    par.game.drawPile.splice(0, 6);
+  }
+
+  pusher.trigger(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
+    cardsLeft: par.game.drawPile.length,
+  });
+
+  pusher.trigger(
+    `gameUpdate-${par.game.gameid}-${par.game.currentRound.associate.id}`,
+    "cardPhaseStarted",
+    {}
+  );
+
+  pusher.trigger(
+    `gameUpdate-${par.game.gameid}-${par.game.currentRound.paralegal.id}`,
+    "cardPhaseStarted",
+    {}
+  );
+}
+
+function reshuffledeck(game) {
+  const drawPile = game.drawPile;
+  const discardPile = game.discardPile;
+  const newDeck = drawPile.concat(discardPile);
+  const shuffledDeck = fisherYatesShuffle(newDeck);
+  console.log(
+    "this is the discardpile length before reshuffling",
+    discardPile.length
+  );
+  console.log(
+    "this is the drawdpile length before reshuffling",
+    drawPile.length
+  );
+  game.discardPile = [];
+
+  return shuffledDeck;
+}
+
+function handlePeekAndDiscard(par) {
+  // check if the player selecting is the Judge and nobody has been selected yet
+  if (
+    par.playerClickingId.equals(par.game.currentRound.judge) &&
+    par.game.currentRound.playerPeeking.id == null
+  ) {
+    par.game.currentRound.playerPeeking = {
+      id: par.selectedPlayerId,
+      cards: [],
+    };
+
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to peek at cards and discard`
+    );
+
+    // Trigger a game chat update to all players
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+    par.game.currentRound.playerPeeking.cards = par.game.drawPile.slice(0, 2);
+    par.game.drawPile.splice(0, 2);
+
+    // Signal to the selected player to start the card peeking and discarding phase
+    pusher.trigger(
+      `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
+      "peekAndDiscardPhaseStarted",
+      {
+        cards: par.game.currentRound.playerPeeking.cards,
+      }
+    );
+
+    pusher.trigger(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
+      cardsLeft: par.game.drawPile.length,
+    });
+  }
+}

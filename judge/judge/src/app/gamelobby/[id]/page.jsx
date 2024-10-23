@@ -1,6 +1,7 @@
 import {auth} from "@/lib/auth"
 import { getGameLobbies } from '@/lib/data';
-import PlayerList from "@/components/gameLobby/PlayerList"
+import  LobbyBody  from "@/components/gameLobby/LobbyBody"
+import styles from "./page.module.css"
 
 const GamePage =  async (context) => {
   const id = context.params.id
@@ -10,14 +11,20 @@ const GamePage =  async (context) => {
     const session = await auth();
     if(session){
       return (
-        <div>
-          <h1>Waiting for Players...</h1>
-          <PlayerList session = {session}/> 
+        <div className = {styles.body}>
+              <h1 className = {styles.title}>Waiting for Players...</h1>
+          <div className = {styles.container}>
+            <LobbyBody className = {styles.list} session = {session} lobbyid = {id}/> 
+          </div>   
         </div>
       );
     }
     else {
-      return <h1> please log in </h1>
+      return(
+        <div className = {styles.body}>
+        <h1> please log in </h1>
+      </div>
+      )
     }
   }
   else {

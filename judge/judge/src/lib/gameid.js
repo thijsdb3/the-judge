@@ -1,6 +1,6 @@
 
 export async function handleMakeGame(router) {
-  const newId = Math.floor(Math.random() * 100000000).toString();
+  const newId = Math.floor(Math.random() * 10000000000).toString();
 
   try {
     await fetch('/api/gameid', {
@@ -35,3 +35,4 @@ export async function handleJoinGame(router) {
     throw(error)
   }
 }
+

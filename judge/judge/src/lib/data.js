@@ -1,4 +1,4 @@
-import { User , GameLobby} from "./models";
+import { User , GameLobby, Game} from "./models";
 import connectToDB from "./utils"
 
 
@@ -26,6 +26,7 @@ export const getUsers = async()=> {
     }
 }
 
+
 export const getGameLobby = async(id) => {
     try{
         connectToDB();
@@ -49,3 +50,6 @@ export const getGameLobbies = async()=> {
         throw new Error("failed to fetch gamelobbies!")
     }
 }
+
+
+

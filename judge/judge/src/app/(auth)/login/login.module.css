@@ -1,17 +1,20 @@
 
 
-.wrapper{
+
+.wrapper
+{
     width: 500px;
     background-color: var(--bgSoft);
     padding:50px;
     display: flex;
     flex-direction: column;
+    gap : 30%;
     text-align: center;
-    gap: 30px;
-    border-radius: 5px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 }
 .container{
     display:flex;
     align-items: center;
+    height: 85vh;
     justify-content: center;
 }

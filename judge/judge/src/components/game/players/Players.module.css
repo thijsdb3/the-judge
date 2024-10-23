@@ -1,0 +1,36 @@
+
+/* Title styling */
+.title {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Player list styling */
+.playerlist {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 30px;
+}
+
+
+.playerlistelement {
+    font-size: 1.5rem; /* Font size of the text */
+    padding: 10px 0;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    color:black;
+    align-items: center;
+    justify-content: flex-start;
+}
+.myTurn {
+    cursor: pointer; /* Change the cursor when it's the player's turn */
+  }
+  
+  .myTurn:hover {
+    background-color: #f0f0f0; /* Add hover effect */
+    transform: scale(1.05); /* Optional: Add a scaling effect */
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }

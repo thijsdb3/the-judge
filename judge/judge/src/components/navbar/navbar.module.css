@@ -1,15 +1,20 @@
 .container{
     height : 100px;
     display: flex;
+    background-color:#e63946;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    padding: 15px 20px; 
     align-items: center;
-    justify-content:  space-between;
-    background-color: red;
+    position: relative;
+    justify-content: space-between;
 }
+
 .logo{
     font-size: 30px ;
     font-weight: bold;
 }
 .username {
+    margin-right: 100px;
     font-size: 16px;
     padding-bottom: 2%;
     position: relative;
