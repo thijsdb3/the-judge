@@ -31,7 +31,7 @@
     justify-content: space-between;
 }
 .leftbox {
-    width: 48%;
+    width: 30%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -41,15 +41,20 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 .cardContainer {
-    display:inline-flex;     
+    display:inline-flex; 
+    margin-right: 20px;    
     flex-direction:row; 
-    position: relative;     
+    position: relative; 
   }
   
   .cardlayout {
     cursor: pointer; 
-    width: 50px; 
-    margin-left:3px;      
+    width: 100px; 
     height: auto;          
+  }
+  
+  .cardlayout:hover {
+   transform: scale(1.05); /* Optional: Add a scaling effect */
+    transition: background-color 0.3s ease, transform 0.2s ease;         
   }
   

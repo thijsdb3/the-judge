@@ -5,24 +5,48 @@ import styles from "./Gamechat.module.css";
 import Pusher from "pusher-js";
 
 const Gamechat = ({ lobbyid }) => {
-  const [gameMessages, setGameMessages] = useState(["Welcome to the Game!"]);
-  const messagesEndRef = useRef(null);  // Reference to the last message
-  const [isScrolledUp, setIsScrolledUp] = useState(false); // Track if user scrolled up
+  const [gameMessages, setGameMessages] = useState([]);
 
+  const messagesEndRef = useRef(null);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
+
+  // Fetch initial messages from the database on component mount
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const res = await fetch('/api/game/gamechat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lobbyid }), // Send lobbyid in the POST body
+        });
+        
+        const data = await res.json();
+        setGameMessages(data.messages.length > 0 ? data.messages : ["Welcome to the Game!"]);
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+      }
+    };
+
+    if (lobbyid) {
+      fetchMessages();
+    }
+  }, [lobbyid]);
+
+  // Subscribe to Pusher for real-time updates
   useEffect(() => {
     if (lobbyid) {
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-        cluster: 'eu',
+        cluster: "eu",
       });
 
       const channel = pusher.subscribe(`gameUpdate-${lobbyid}`);
 
-      channel.bind('pusher:subscription_error', (status) => {
-        console.error('Pusher subscription error:', status);
+      channel.bind("pusher:subscription_error", (status) => {
+        console.error("Pusher subscription error:", status);
       });
-  
-      channel.bind('gamechat', (data) => {
-        setGameMessages(data.gamechat);
+
+      channel.bind("gamechat", (data) => {
+        setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);   
       });
 
       return () => {
@@ -32,21 +56,20 @@ const Gamechat = ({ lobbyid }) => {
     }
   }, [lobbyid]);
 
-  // Handle scrolling behavior
+  // Auto-scroll behavior
   useEffect(() => {
     if (!isScrolledUp && messagesEndRef.current) {
-      // Scroll to the bottom only if the user is not manually scrolled up
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [gameMessages, isScrolledUp]);
 
-  // Detect when the user scrolls up
+  // Handle scroll detection
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     if (scrollTop + clientHeight < scrollHeight - 50) {
-      setIsScrolledUp(true);  // User has scrolled up
+      setIsScrolledUp(true);
     } else {
-      setIsScrolledUp(false); // User is at the bottom
+      setIsScrolledUp(false);
     }
   };
 
@@ -58,9 +81,11 @@ const Gamechat = ({ lobbyid }) => {
       <div className={styles.messages} onScroll={handleScroll}>
         <ul>
           {gameMessages.map((message, index) => (
-            <li key={index} className={styles.message}>{message}</li>
+            <li key={index} className={styles.message}>
+              {message}
+            </li>
           ))}
-          <div ref={messagesEndRef} /> 
+          <div ref={messagesEndRef} />
         </ul>
       </div>
     </div>

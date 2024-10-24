@@ -147,8 +147,8 @@ const Deck = ({ lobbyid, session }) => {
                 src={`/images/${card}.png`} 
                 alt={`Card ${card}`} 
                 layout="responsive"  
-                width={100} 
-                height={150} 
+                width={300} 
+                height={300} 
               />
             </div>
           </div>
@@ -165,8 +165,8 @@ const Deck = ({ lobbyid, session }) => {
         src={`/images/${card}.png`} 
         alt={`Card ${card}`} 
         layout="responsive"  
-        width={100} 
-        height={150} 
+        width={300} 
+        height={300} 
       />
       {playerPeeking && (
         <div className={styles.peekOptions}>

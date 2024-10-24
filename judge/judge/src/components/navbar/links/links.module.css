@@ -1,64 +1,69 @@
-
 .centerlinks {
-    display: flex;
-    justify-content: space-between;
-    position: absolute;
-    top : 30%;
-    gap : 10px;
-    left: 50%;
-    font-size: large;
-    transform: translateX(-50%);
-  }
-  
-  .rightLinks {
-    position: absolute;
-    display :inline-block;
-    right: 1%;
-    top: 30%;
-    font-weight: bold;
-    cursor: pointer;
-  }
-
-  
-  .logout {
-    padding: 10px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .loginAndSignup {
-    display: flex;
-    gap: 15px; /* Space between the buttons */
-  }
-
-
-.menuButton{   
-    display: none;
-
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  top: 30%;
+  gap: 10px;
+  left: 50%;
+  font-size: large;
+  transform: translateX(-50%);
 }
 
-.mobileLinks{
-    display : none;
+
+
+.rightLinks {
+  position: absolute;
+  display: inline-block;
+  right: 1%;
+  top: 25%;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.logout {
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.loginAndSignup {
+  display: flex;
+  gap: 15px; /* Space between the buttons */
+}
+
+.logout:hover {
+  background-color: #f0f0f0; /* Add hover effect */
+  transform: scale(1.05); /* Optional: Add a scaling effect */
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.menuButton {   
+  display: none;
+}
+
+.mobileLinks {
+  display: none;
 }
 
 @media (max-width: 768px) {
-    .centerlinks, .rightLinks {
+  .centerlinks, .rightLinks {
       display: none;
-    }
-    .menuButton {
+  }
+  .menuButton {
       display: block;
       cursor: pointer;
-    }
-    .mobileLinks {
+  }
+  .mobileLinks {
       position: absolute;
       top: 100px;
       right: 0;
       width: 50%;
-      height: calc(100vh - 100px);
+      height: calc(100vh - 80px);
       background-color: var(--bg);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
-    }
   }
+}

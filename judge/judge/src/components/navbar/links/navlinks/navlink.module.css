@@ -7,6 +7,6 @@
 
 .active{
     background-color: var(--text);
-    color : purple;
+    color : purple 
 
 }

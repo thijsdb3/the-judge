@@ -1,5 +1,5 @@
 .container{
-    height : 100px;
+    height : 80px;
     display: flex;
     background-color:#e63946;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);

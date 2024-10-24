@@ -1,6 +1,6 @@
 
 :root{
-    --bg :  linear-gradient(135deg, #800080 0%, #ff1493 100%);
+    --bg :  rebeccapurple;
     --text :white ;
     --bgSoft : #2d2b42;
     --textSoft: #e5e5e5;

@@ -3,17 +3,17 @@
     padding: 0;
     box-sizing: border-box;
     font-family: 'Arial', sans-serif;
-    padding-top: 100px; /* Push content below the header */
+    padding-top: 80px; /* Push content below the header */
   }
   
   .container {
     display: flex;
-    height: calc(-100px + 100vh); 
+    height: calc(-80px + 100vh); 
   }
   
   /* Left part styling */
   .leftpart {
-    width: 50%;
+    width: 40%;
     background-color: #f8f8f8;
     padding: 20px;
     border-right: 2px solid #ccc;
@@ -22,7 +22,7 @@
   
   /* Right part styling */
   .rightpart {
-    width: 50%;
+    width: 90%;
     display: flex;
     flex-direction: column;
     justify-content: center;

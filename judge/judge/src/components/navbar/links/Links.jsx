@@ -17,9 +17,9 @@ const Links = ({ session }) => {
     <div >
       {/* Center Links */}
       <div className={styles.centerlinks}>
-        {links.map((link) => (
-          <NavLink item={link} key={link.title} />
-        ))}
+      {links.map((link) => (
+  <NavLink item={link} key={link.title}  />
+))}
       </div>
 
       {/* Right Links */}

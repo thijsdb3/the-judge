@@ -1,6 +1,7 @@
 /* Right box (split vertically into two halves) */
 .rightbox {
-    width: 48%;
+    width: 35%;
+    height: 45%;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
