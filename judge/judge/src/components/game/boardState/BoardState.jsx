@@ -9,6 +9,37 @@ const BoardState = ({ lobbyid }) => {
   const [redState, setRedState] = useState(0); 
   
   useEffect(() => {
+    // Fetch current state from the database on component mount
+    if (!lobbyid) return; 
+    const fetchCurrentBoardState = async () => {
+      try {
+        const res = await fetch(`/api/game/currentBoardState`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lobbyid }),
+        });
+        
+        if (!res.ok) {
+          console.error('Failed to fetch current BoardState:', res.statusText);
+          return;
+        }
+    
+        const data = await res.json();
+          setBlueState(data.numberOfBlues);
+          setRedState(data.numberOfReds);
+          console.log("this is the blue state",data.numberOfBlues)
+          
+        
+      } catch (error) {
+        console.error('Error parsing JSON response:', error);
+      }}
+      if (lobbyid) {
+        fetchCurrentBoardState();
+      }
+  
+    }, [lobbyid] );
+
+  useEffect(() => {
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: 'eu',
       });

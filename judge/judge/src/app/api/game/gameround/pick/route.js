@@ -75,6 +75,9 @@ export async function POST(request) {
       break;
 
     case "Peek and Discard":
+      game.currentRound.partner.id = null;
+      game.currentRound.associate.id = null;
+      game.currentRound.paralegal.id = null;
       handlePeekAndDiscard(args);
       break;
 
@@ -113,7 +116,6 @@ function handlePartnerPicksAssociate(par) {
     pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
       gamechat: par.game.gameChat,
     });
- 
   }
 }
 
@@ -124,7 +126,6 @@ function handleAssociatePicksParalegal(par) {
     !par.selectedPlayerId.equals(par.game.currentRound.associate.id)
   ) {
     par.game.currentRound.paralegal.id = par.selectedPlayerId;
-    par.game.currentRound.phase = "Cards Selection"; // Move to next phase
     par.game.gameChat.push(
       `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
     );
@@ -157,7 +158,7 @@ function setUpForNextCardPhase(par) {
   pusher.trigger(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
     cardsLeft: par.game.drawPile.length,
   });
-
+  par.game.currentRound.phase = "seeCards";
   pusher.trigger(
     `gameUpdate-${par.game.gameid}-${par.game.currentRound.associate.id}`,
     "cardPhaseStarted",
@@ -204,13 +205,11 @@ function handlePeekAndDiscard(par) {
       `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to peek at cards and discard`
     );
 
-    // Trigger a game chat update to all players
     pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
       gamechat: par.game.gameChat,
     });
     par.game.currentRound.playerPeeking.cards = par.game.drawPile.slice(0, 2);
     par.game.drawPile.splice(0, 2);
-
     // Signal to the selected player to start the card peeking and discarding phase
     pusher.trigger(
       `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,

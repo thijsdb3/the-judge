@@ -21,9 +21,10 @@ export async function POST(request) {
   const { partner, associate, paralegal } = game.currentRound;
 
   let userCards =
-    userid === associate.id.toString() ? associate.cards : paralegal.cards;
+    userid === associate.id?.toString() ? associate.cards : paralegal.cards;
 
   if (action === "seeCards") {
+    game.currentRound.phase = "seeCards";
     await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
       cards: userCards,
     });
@@ -31,7 +32,8 @@ export async function POST(request) {
   }
 
   if (action === "discardCard") {
-    if (userid === partner.id.toString()) {
+    game.currentRound.phase = "discardCard";
+    if (userid === partner.id?.toString()) {
       const remainingCards = userCards.filter(
         (c, i) => i !== userCards.indexOf(card)
       );
@@ -102,9 +104,8 @@ export async function POST(request) {
 
     if (associate.cards?.length === 2 && paralegal.cards?.length === 2) {
       partner.cards = [...associate.cards, ...paralegal.cards];
-
       await pusher.trigger(
-        `gameUpdate-${lobbyid}-${partner.id.toString()}`,
+        `gameUpdate-${lobbyid}-${partner.id?.toString()}`,
         "receivePartnerCards",
         { cards: partner.cards }
       );
@@ -117,28 +118,19 @@ export async function POST(request) {
   if (action === "peek and discard") {
     const peekedCards = game.currentRound.playerPeeking.cards; // Peek the top two cards
 
-    if (!discardOption) {
-      // If no discardOption is provided, just send the peeked cards
-      await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "peekCards", {
-        cards: peekedCards,
-      });
-      return NextResponse.json({ cards: peekedCards });
-    }
-
     if (discardOption === "discardOne" && card) {
       // Discard one card, return the remaining card to the deck
       const remainingCard = peekedCards.filter(
-        (c, i) => i !== userCards.indexOf(card)
+        (c, i) => i !== peekedCards.indexOf(card)
       );
-      game.drawPile = game.drawPile.push(remainingCard);
-      game.discardPile = game.discardPile.push(card);
+      console.log("this is the not discarded card", remainingCard);
+      console.log("this is the  discarded card", card);
+
+      game.drawPile = game.drawPile.concat(remainingCard);
+      game.discardPile.push(card);
       pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
         cardsLeft: game.drawPile.length,
       });
-      console.log(
-        "this is the length of the drawpile after discardOne",
-        game.drawPile.length
-      );
     } else if (discardOption === "discardNone") {
       game.drawPile = game.drawPile.concat(peekedCards);
       console.log(
@@ -177,5 +169,4 @@ async function clearRound(game) {
 
   // Transition to the next phase after clearing the round
   await transitionPhase(game, "Judge Picks Partner");
-  pusher.trigger(`gameUpdate-${game.gameid}-${game.currentRound.judge}`,"turn");
 }

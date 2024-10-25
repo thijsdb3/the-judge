@@ -7,13 +7,52 @@ import Pusher from "pusher-js";
 
 const Deck = ({ lobbyid, session }) => {
   const [userCards, setUserCards] = useState([]);
-  const [phase, setPhase] = useState('unstarted'); // Initial phase is unstarted
-  const [selectedCard, setSelectedCard] = useState(null); // Track the card selected for discarding
-  const [cardsLeft, setCardsLeft] = useState(33); // Track cards left in deck
-  const [playerPeeking, setPlayerPeeking] = useState(false); // Track if player is peeking at cards
+  const [phase, setPhase] = useState('unstarted');
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [cardsLeft, setCardsLeft] = useState(34);
+  const [playerPeeking, setPlayerPeeking] = useState(false);
+  const userid = session?.user.id;
+
+
+
+useEffect(() => {
+  // Fetch current state from the database on component mount
+  if (!userid || !lobbyid) return; 
+  const fetchCurrentState = async () => {
+    try {
+      const res = await fetch(`/api/game/gameround/getUserCards`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userid, lobbyid }),
+      });
+      
+      if (!res.ok) {
+        console.error('Failed to fetch user cards:', res.statusText);
+        return;
+      }
+  
+      const data = await res.json();
+      if (data.cards) {
+        setUserCards(data.cards);
+        setPhase(data.phase || 'unstarted');
+        setPlayerPeeking(data.playerPeeking)
+        setCardsLeft(data.cardsleft)
+        console.log("these are the user cards after response", data.cards);
+        console.log("this is the phase after response", data.phase || 'unstarted');
+      }
+    } catch (error) {
+      console.error('Error parsing JSON response:', error);
+    }}
+    if (lobbyid && userid) {
+      fetchCurrentState();
+    }
+
+  }, [lobbyid,userid] );
 
   useEffect(() => {
+
     if (session) {
+
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: 'eu',
       });
@@ -25,30 +64,23 @@ const Deck = ({ lobbyid, session }) => {
         console.error('Pusher subscription error:', status);
       });
 
-      // Event triggered when the card phase begins
-      channel.bind('cardPhaseStarted', () => {
-        setPhase('seeCards');
-      });
+      channel.bind('cardPhaseStarted', () => setPhase('seeCards'));
 
-      // Event triggered when server sends the cards to the user
       channel.bind('seeCards', (message) => {
         setUserCards(message.cards);
-        setPhase('discardCard'); // Transition to discard phase after showing cards
+        setPhase('discardCard');
       });
 
-      // Event for receiving partner cards
       channel.bind('receivePartnerCards', (message) => {
         setUserCards(message.cards);
-        setPhase('discardCard'); 
+        setPhase('discardCard');
       });
 
-    
       channel.bind('peekAndDiscardPhaseStarted', (message) => {
-        setPlayerPeeking(true); 
-        setUserCards(message.cards)
-        setPhase('peekAndDiscard'); 
+        setPlayerPeeking(true);
+        setUserCards(message.cards);
+        setPhase('Peek and Discard');
       });
-    
 
       deckinfochannel.bind('updateDeckCount', (message) => {
         setCardsLeft(message.cardsLeft);
@@ -155,7 +187,7 @@ const Deck = ({ lobbyid, session }) => {
         ))}
 
         {/* Peek and discard logic */}
-        {phase === 'peekAndDiscard' && userCards.map((card, index) => (
+        {phase === 'Peek and Discard' && userCards.map((card, index) => (
   <div 
     key={index} 
     className={styles.cardContainer} 
