@@ -80,6 +80,24 @@ export async function POST(request) {
       game.currentRound.paralegal.id = null;
       handlePeekAndDiscard(args);
       break;
+    case "Judge picks investigator":
+      game.currentRound.partner.id = null;
+      game.currentRound.associate.id = null;
+      game.currentRound.paralegal.id = null;
+      JudgePicksInvestigator(args);
+      break;
+    case "Judge picks reverse investigator":
+      game.currentRound.partner.id = null;
+      game.currentRound.associate.id = null;
+      game.currentRound.paralegal.id = null;
+      JudgePicksReverseInvestigator(args);
+      break;
+    case "investigation":
+      handleInvestigation(args);
+      break;
+    case "reverse investigation":
+      handleReverseInvestigation(args);
+      break;
 
     default:
       return NextResponse.json({ error: "Invalid phase" }, { status: 400 });
@@ -223,4 +241,130 @@ function handlePeekAndDiscard(par) {
       cardsLeft: par.game.drawPile.length,
     });
   }
+}
+
+function JudgePicksInvestigator(par) {
+  // check if the player selecting is the Judge and nobody has been selected yet
+  if (
+    par.playerClickingId.equals(par.game.currentRound.judge) &&
+    par.game.playerInvestigating == null
+  ) {
+    par.game.playerInvestigating = par.selectedPlayerId;
+
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to investigate`
+    );
+
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+    par.game.currentRound.phase = "investigation";
+  }
+}
+
+function JudgePicksReverseInvestigator(par) {
+  // check if the player selecting is the Judge and nobody has been selected yet
+  if (
+    par.playerClickingId.equals(par.game.currentRound.judge) &&
+    par.game.playerReverseInvestigating == null
+  ) {
+    par.game.playerReverseInvestigating = par.selectedPlayerId;
+
+    par.game.gameChat.push(
+      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to reverse investigate`
+    );
+
+    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+      gamechat: par.game.gameChat,
+    });
+    par.game.currentRound.phase = "reverse investigation";
+  }
+}
+
+async function handleInvestigation(par) {
+  if (
+    par.playerClickingId.equals(par.game.playerInvestigating) &&
+    par.game.playerBeingInvestigated == null
+  ) {
+    par.game.playerBeingInvestigated = par.selectedPlayerId;
+
+    // Populate players to retrieve player usernames
+    await par.game.populate("players.player");
+
+    // Find the usernames of the player clicking and player being clicked
+    const playerClicking = par.game.players.find((p) =>
+      p.player._id.equals(par.playerClickingId)
+    );
+    const playerBeingClicked = par.game.players.find((p) =>
+      p.player._id.equals(par.selectedPlayerId)
+    );
+    console.log(
+      "these is the username of player investigating",
+      playerClicking
+    );
+    console.log(
+      "these is the username of player being investigated",
+      playerBeingClicked
+    );
+    if (playerClicking && playerBeingClicked) {
+      await pusher.trigger(
+        `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
+        "investigation",
+        {
+          playerInvestigating: playerClicking.player.username,
+          playerBeingInvestigated: playerBeingClicked.player.username,
+        }
+      );
+    } else {
+      console.error("Player data could not be found for investigation.");
+    }
+  }
+
+  par.game.currentRound.phase = "Judge Picks Partner";
+}
+
+async function handleReverseInvestigation(par) {
+  if (
+    par.playerClickingId.equals(par.game.playerReverseInvestigating) &&
+    par.game.playerBeingReverseInvestigated == null
+  ) {
+    par.game.playerBeingReverseInvestigated = par.selectedPlayerId;
+
+    // Populate players to retrieve player usernames
+    await par.game.populate("players.player");
+
+    // Find the usernames of the player clicking and player being clicked
+    const playerClicking = par.game.players.find((p) =>
+      p.player._id.equals(par.playerClickingId)
+    );
+    const playerBeingClicked = par.game.players.find((p) =>
+      p.player._id.equals(par.selectedPlayerId)
+    );
+
+    console.log(
+      "these is the username of player investigating",
+      playerClicking
+    );
+    console.log(
+      "these is the username of player being investigated",
+      playerBeingClicked
+    );
+
+    if (playerClicking && playerBeingClicked) {
+      await pusher.trigger(
+        `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
+        "reverse investigation",
+        {
+          playerReverseInvestigating: playerClicking.player.username,
+          playerBeingReverseInvestigated: playerBeingClicked.player.username,
+        }
+      );
+    } else {
+      console.error(
+        "Player data could not be found for reverse investigation."
+      );
+    }
+  }
+
+  par.game.currentRound.phase = "Judge Picks Partner";
 }

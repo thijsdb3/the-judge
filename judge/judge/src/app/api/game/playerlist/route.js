@@ -19,6 +19,7 @@ export async function POST(req) {
       username: p.player.username,
       role: p.role,
     }));
+    
     return new Response(JSON.stringify({ status: 200, players: playerData }), {
       status: 200,
       headers: {

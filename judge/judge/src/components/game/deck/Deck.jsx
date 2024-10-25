@@ -125,7 +125,7 @@ useEffect(() => {
   // Function to handle the peek and discard phase for playerPeeking
   const handlePeekAction = async (action, card = null) => {
     console.log("handlePeekAction runs")
-    let requestData = { userid: session.user.id, lobbyid, action: 'peek and discard' };
+    let requestData = { userid: session.user.id, lobbyid, action: 'Peek and Discard' };
     
     if (action === 'discardOne' && card) {
       requestData = { ...requestData, discardOption: 'discardOne', card };

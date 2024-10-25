@@ -56,11 +56,6 @@ const gameSchema = new mongoose.Schema({
         type: Boolean,
         required: true,
       },
-      turn : {
-        type : Boolean,
-        required : true,
-        default : false,
-      }
     },
   ],
   boardState: {
@@ -119,12 +114,23 @@ const gameSchema = new mongoose.Schema({
         "seeCards",
         "discardCard",
         "Peek and Discard",
+        "Judge picks investigator",
+        "Judge picks reverse investigator",
         "investigation",
         "reverse investigation",
         "game ended",
       ],
     },
   },
+  playerInvestigating :{
+    type: mongoose.Schema.Types.ObjectId, ref: "User" ,
+    default : null,
+  },
+  playerReverseInvestigating :{
+    type: mongoose.Schema.Types.ObjectId, ref: "User" ,
+    default : null,
+  },
+
   previousTeam: {
     partner: {
       type: mongoose.Schema.Types.ObjectId,

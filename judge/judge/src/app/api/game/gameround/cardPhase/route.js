@@ -18,133 +18,138 @@ export async function POST(request) {
   await connectToDB();
 
   const game = await Game.findOne({ gameid: lobbyid });
-  const { partner, associate, paralegal } = game.currentRound;
 
   let userCards =
-    userid === associate.id?.toString() ? associate.cards : paralegal.cards;
+    userid === game.currentRound.associate.id?.toString()
+      ? game.currentRound.associate.cards
+      : game.currentRound.paralegal.cards;
 
-  if (action === "seeCards") {
-    game.currentRound.phase = "seeCards";
-    await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
-      cards: userCards,
-    });
-    return NextResponse.json({ cards: userCards });
+  switch (action) {
+    case "seeCards":
+      return handleSeeCards(game, userCards, lobbyid, userid);
+
+    case "discardCard":
+      return handleDiscardCard(game, userid, userCards, card, lobbyid);
+
+    case "Peek and Discard":
+      return handlePeekAndDiscard(game, discardOption, card, lobbyid);
+
+    default:
+      return NextResponse.json(
+        { error: "Invalid action specified." },
+        { status: 400 }
+      );
   }
+}
 
-  if (action === "discardCard") {
-    game.currentRound.phase = "discardCard";
-    if (userid === partner.id?.toString()) {
-      const remainingCards = userCards.filter(
-        (c, i) => i !== userCards.indexOf(card)
-      );
+// Function to handle seeing cards
+async function handleSeeCards(game, userCards, lobbyid, userid) {
+  game.currentRound.phase = "seeCards";
+  await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
+    cards: userCards,
+  });
+  return NextResponse.json({ cards: userCards });
+}
 
-      game.discardPile = game.discardPile.concat(remainingCards);
+async function triggerPusherEvent(channel, event, data) {
+  await pusher.trigger(channel, event, data);
+}
 
-      const { blueCount, redCount } = remainingCards.reduce(
-        (counts, card) => {
-          if (card === "blue") counts.blueCount += 1;
-          else if (card === "red") counts.redCount += 1;
-          return counts;
-        },
-        { blueCount: 0, redCount: 0 }
-      );
+// Function to handle discarding a card
+async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
+  game.currentRound.phase = "discardCard";
+  const { partner, associate, paralegal } = game.currentRound;
+  const remainingCards = userCards.filter(
+    (c, i) => i !== userCards.indexOf(card)
+  );
 
-      if (blueCount > redCount) {
-        game.gameChat.push("blue card enacted");
-        game.set("boardState.blues", game.boardState.blues + 1);
-        await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
-          gamechat: game.gameChat,
-        });
-        await pusher.trigger(`gameUpdate-${lobbyid}`, "BlueUpdate", {
-          bluestate: game.boardState.blues,
-        });
+  if (userid == partner.id?.toString()) {
+    game.discardPile.push(...remainingCards);
 
-        if (game.boardState.blues !== 5) {
-          await transitionPhase(game, "Judge Picks Partner");
-        } else {
-          game.gameChat.push("honest team has won!");
-          await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
-            gamechat: game.gameChat,
-          });
-          await transitionPhase(game, "game ended");
+    const blueCount = remainingCards.filter((card) => card == "blue").length;
+    const isBlue = blueCount > remainingCards.length / 2;
+
+    game.gameChat.push(isBlue ? "blue card enacted" : "red card enacted");
+    game.boardState[isBlue ? "blues" : "reds"] += 1;
+
+    await Promise.all([
+      triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
+        gamechat: game.gameChat,
+      }),
+      triggerPusherEvent(
+        `gameUpdate-${lobbyid}`,
+        `${isBlue ? "Blue" : "Red"}Update`,
+        {
+          [`${isBlue ? "bluestate" : "redstate"}`]:
+            game.boardState[isBlue ? "blues" : "reds"],
         }
-      } else {
-        game.set("boardState.reds", game.boardState.reds + 1);
-        game.gameChat.push("red card enacted");
-        await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
-          gamechat: game.gameChat,
-        });
-        await pusher.trigger(`gameUpdate-${lobbyid}`, "RedUpdate", {
-          redstate: game.boardState.reds,
-        });
-        switch (game.boardState.reds) {
-          case 2:
-            await transitionPhase(game, "Peek and Discard");
-            break;
-          case 5:
-            game.gameChat.push("corrupt team has won!");
-            await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
-              gamechat: game.gameChat,
-            });
-            await transitionPhase(game, "game ended");
-            break;
-          default:
-            await clearRound(game);
-        }
-      }
-    } else {
-      const remainingCards = userCards.filter(
-        (c, i) => i !== userCards.indexOf(card)
-      );
-      userid === associate.id.toString()
-        ? (associate.cards = remainingCards)
-        : (paralegal.cards = remainingCards);
-      game.discardPile.push(card);
+      ),
+    ]);
+
+    if (await checkWinCondition(game, isBlue, lobbyid)) {
+      return NextResponse.json({ message: "game played successfully" });
     }
 
-    if (associate.cards?.length === 2 && paralegal.cards?.length === 2) {
-      partner.cards = [...associate.cards, ...paralegal.cards];
-      await pusher.trigger(
-        `gameUpdate-${lobbyid}-${partner.id?.toString()}`,
-        "receivePartnerCards",
-        { cards: partner.cards }
-      );
+    const playercount = game.players.length;
+
+    if (!isBlue && game.boardState.reds === 2) {
+      await transitionPhase(game, "Peek and Discard");
+      return;
     }
-    await game.save();
-
-    return NextResponse.json({ message: "Card discarded successfully" });
-  }
-
-  if (action === "peek and discard") {
-    const peekedCards = game.currentRound.playerPeeking.cards; // Peek the top two cards
-
-    if (discardOption === "discardOne" && card) {
-      // Discard one card, return the remaining card to the deck
-      const remainingCard = peekedCards.filter(
-        (c, i) => i !== peekedCards.indexOf(card)
-      );
-      console.log("this is the not discarded card", remainingCard);
-      console.log("this is the  discarded card", card);
-
-      game.drawPile = game.drawPile.concat(remainingCard);
-      game.discardPile.push(card);
-      pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
-        cardsLeft: game.drawPile.length,
-      });
-    } else if (discardOption === "discardNone") {
-      game.drawPile = game.drawPile.concat(peekedCards);
-      console.log(
-        "this is the length of the drawpile after discardNone",
-        game.drawPile.length
-      );
-      pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
-        cardsLeft: game.drawPile.length,
-      });
+    //TO DO update to >= 7
+    if (!isBlue && game.boardState.reds === 3 && playercount >= 4) {
+      await transitionPhase(game, "Judge picks investigator");
+      return;
+    }
+    //TO DO update to >= 11
+    if (!isBlue && game.boardState.reds === 4 && playercount >= 4) {
+      await transitionPhase(game, "Judge picks reverse investigator");
+      return;
     }
 
     await clearRound(game);
-    return NextResponse.json({ message: "Peek and discard completed" });
+  } else {
+    if (userid === associate.id.toString()) {
+      associate.cards = remainingCards;
+    } else {
+      paralegal.cards = remainingCards;
+    }
+    game.discardPile.push(card);
   }
+
+  if (associate.cards?.length === 2 && paralegal.cards?.length === 2) {
+    partner.cards = [...associate.cards, ...paralegal.cards];
+    await triggerPusherEvent(
+      `gameUpdate-${lobbyid}-${partner.id?.toString()}`,
+      "receivePartnerCards",
+      {
+        cards: partner.cards,
+      }
+    );
+  }
+
+  await game.save();
+  return NextResponse.json({ message: "Card discarded successfully" });
+}
+
+async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
+  const peekedCards = game.currentRound.playerPeeking.cards;
+
+  if (discardOption === "discardOne" && card) {
+    const remainingCards = peekedCards.filter(
+      (c, i) => i !== peekedCards.indexOf(card)
+    );
+    game.drawPile.unshift(...remainingCards);
+    game.discardPile.push(card);
+  } else if (discardOption === "discardNone") {
+    game.drawPile.unshift(...peekedCards);
+  }
+
+  await pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
+    cardsLeft: game.drawPile.length,
+  });
+  await clearRound(game);
+  return NextResponse.json({ message: "Peek and Discard completed" });
 }
 
 // Function to handle phase transitions
@@ -153,20 +158,36 @@ async function transitionPhase(game, newPhase) {
   await game.save();
 }
 
+// function to clear the round to set up for the next
 async function clearRound(game) {
   game.previousTeam.partner = game.currentRound.partner.id;
-  game.currentRound.partner.id = null;
-
   game.previousTeam.associate = game.currentRound.associate.id;
-  game.currentRound.associate.id = null;
-
   game.previousTeam.paralegal = game.currentRound.paralegal.id;
+  game.currentRound.partner.id = null;
+  game.currentRound.associate.id = null;
   game.currentRound.paralegal.id = null;
-
   game.currentRound.partner.cards = null;
   game.currentRound.associate.cards = null;
   game.currentRound.paralegal.cards = null;
 
   // Transition to the next phase after clearing the round
   await transitionPhase(game, "Judge Picks Partner");
+}
+
+async function checkWinCondition(game, isBlue, lobbyid) {
+  if (
+    (isBlue && game.boardState.blues === 5) ||
+    (!isBlue && game.boardState.reds === 5)
+  ) {
+    const winningMessage = isBlue
+      ? "honest team has won!"
+      : "corrupt team has won!";
+    game.gameChat.push(winningMessage);
+    await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
+      gamechat: game.gameChat,
+    });
+    await transitionPhase(game, "game ended");
+    return true;
+  }
+  return false;
 }

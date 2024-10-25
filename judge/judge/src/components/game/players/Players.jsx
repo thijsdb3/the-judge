@@ -5,12 +5,41 @@ import styles from "./Players.module.css";
 import Image from 'next/image';
 import { fisherYatesShuffle } from '@/lib/utils';
 import { handlePick } from '@/lib/gameround';
+import Pusher from "pusher-js";
 
 const Players = ({ lobbyid, session }) => {
   const [players, setPlayers] = useState([]);
   const [currentPlayerRole, setCurrentPlayerRole] = useState(null);
   const [error, setError] = useState(null);
+ 
+  const [playerInvestigating, setPlayerInvestigating] = useState(null);
+  const [playerBeingInvestigated, setPlayerBeingInvestigated] = useState(null);
+  const [playerReverseInvestigating, setPlayerReverseInvestigating] = useState(null);
+  const [playerBeingReverseInvestigated, setPlayerBeingReverseInvestigated] = useState(null);
+
   const username = session?.user.username;
+  const userid = session?.user.id;
+
+  const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+    cluster: "eu",
+  });
+
+  const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
+
+  useEffect(() => { 
+    channel.bind("investigation", (data) => {
+      setPlayerInvestigating(data.playerInvestigating);   
+      setPlayerBeingInvestigated(data.playerBeingInvestigated);
+    });
+
+    channel.bind("reverse investigation", (data) => 
+      {
+        console.log(data.playerReverseInvestigating)
+        console.log(data.playerBeingReverseInvestigated)
+      setPlayerReverseInvestigating(data.playerReverseInvestigating);   
+      setPlayerBeingReverseInvestigated(data.playerBeingReverseInvestigated);
+    });
+  }, [lobbyid, username]);
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -30,6 +59,7 @@ const Players = ({ lobbyid, session }) => {
           const allPlayers = data.players;
 
           const currentPlayer = allPlayers.find(player => player.username === username);
+
           if (currentPlayer) {
             setCurrentPlayerRole(currentPlayer.role);
           }
@@ -50,16 +80,26 @@ const Players = ({ lobbyid, session }) => {
     fetchPlayers();
   }, [lobbyid, username]);
 
-
-
-  if (error) return <p>Error: {error}</p>;
-
   const getPlayerStyle = (playerRole, playerUsername) => {
-    if (currentPlayerRole === "Good") {
-      return playerUsername === username ? { color: 'blue' } : { color: 'black' };
-    } else if (currentPlayerRole === "Evil") {
-      return playerRole === "Evil" ? { color: 'red' } : { color: 'black' };
+    // Investigation role reveal: investigated player's role shown in blue if good, red if evil
+    if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
+      return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
+    // Reverse investigation role reveal: reverse-investigated player's role shown to reverse-investigator
+    if (playerBeingReverseInvestigated === playerUsername && playerReverseInvestigating === username) {
+      return { color: playerRole === "Good" ? 'blue' : 'red' };
+    }
+
+    // Corrupt players see other corrupt players in red
+    if (currentPlayerRole === "Evil" && playerRole === "Evil") {
+      return { color: 'red' };
+    }
+    // Good players see their own role in blue
+    if (currentPlayerRole === "Good" && playerUsername === username) {
+      return { color: 'blue' };
+    }
+
+    // Default color for other cases
     return { color: 'black' };
   };
 
@@ -73,7 +113,7 @@ const Players = ({ lobbyid, session }) => {
             key={index}
             style={getPlayerStyle(player.role, player.username)}
             onClick={() => {
-                handlePick(player, lobbyid, username);
+              handlePick(player, lobbyid, username);
             }}
           >
             <Image
