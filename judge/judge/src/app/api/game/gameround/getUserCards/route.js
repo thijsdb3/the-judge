@@ -35,8 +35,6 @@ export async function POST(request) {
       default:
         break;
     }
-    console.log("these are the userCards", userCards);
-    console.log("this is the phase", phase);
     return NextResponse.json({
       cards: userCards,
       phase,

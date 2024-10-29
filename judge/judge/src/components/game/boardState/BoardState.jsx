@@ -27,7 +27,6 @@ const BoardState = ({ lobbyid }) => {
         const data = await res.json();
           setBlueState(data.numberOfBlues);
           setRedState(data.numberOfReds);
-          console.log("this is the blue state",data.numberOfBlues)
           
         
       } catch (error) {

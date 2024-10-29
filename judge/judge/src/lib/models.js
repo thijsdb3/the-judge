@@ -150,7 +150,7 @@ const gameSchema = new mongoose.Schema({
       type: String,
     },
   ],
-  honestVetoEnabled: {
+  HonestVetoEnabled: {
     type: Boolean,
     default: false,
   },

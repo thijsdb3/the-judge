@@ -34,8 +34,7 @@ const Players = ({ lobbyid, session }) => {
 
     channel.bind("reverse investigation", (data) => 
       {
-        console.log(data.playerReverseInvestigating)
-        console.log(data.playerBeingReverseInvestigated)
+    
       setPlayerReverseInvestigating(data.playerReverseInvestigating);   
       setPlayerBeingReverseInvestigated(data.playerBeingReverseInvestigated);
     });
@@ -85,8 +84,7 @@ const Players = ({ lobbyid, session }) => {
     if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
       return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
-    // Reverse investigation role reveal: reverse-investigated player's role shown to reverse-investigator
-    if (playerBeingReverseInvestigated === playerUsername && playerReverseInvestigating === username) {
+    if (playerUsername === playerReverseInvestigating && playerBeingReverseInvestigated === username) {
       return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
 

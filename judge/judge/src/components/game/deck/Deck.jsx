@@ -37,8 +37,7 @@ useEffect(() => {
         setPhase(data.phase || 'unstarted');
         setPlayerPeeking(data.playerPeeking)
         setCardsLeft(data.cardsleft)
-        console.log("these are the user cards after response", data.cards);
-        console.log("this is the phase after response", data.phase || 'unstarted');
+
       }
     } catch (error) {
       console.error('Error parsing JSON response:', error);
@@ -124,7 +123,6 @@ useEffect(() => {
 
   // Function to handle the peek and discard phase for playerPeeking
   const handlePeekAction = async (action, card = null) => {
-    console.log("handlePeekAction runs")
     let requestData = { userid: session.user.id, lobbyid, action: 'Peek and Discard' };
     
     if (action === 'discardOne' && card) {

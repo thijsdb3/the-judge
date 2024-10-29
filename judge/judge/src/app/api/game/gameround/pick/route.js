@@ -195,14 +195,7 @@ function reshuffledeck(game) {
   const discardPile = game.discardPile;
   const newDeck = drawPile.concat(discardPile);
   const shuffledDeck = fisherYatesShuffle(newDeck);
-  console.log(
-    "this is the discardpile length before reshuffling",
-    discardPile.length
-  );
-  console.log(
-    "this is the drawdpile length before reshuffling",
-    drawPile.length
-  );
+
   game.discardPile = [];
 
   return shuffledDeck;
@@ -298,15 +291,16 @@ async function handleInvestigation(par) {
     const playerBeingClicked = par.game.players.find((p) =>
       p.player._id.equals(par.selectedPlayerId)
     );
-    console.log(
-      "these is the username of player investigating",
-      playerClicking
-    );
-    console.log(
-      "these is the username of player being investigated",
-      playerBeingClicked
-    );
+
     if (playerClicking && playerBeingClicked) {
+      par.game.gameChat.push(
+        `${par.playerClickingUsername} chose  to see ${par.selectedPlayerUsername}'s role`
+      );
+
+      await pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+        gamechat: par.game.gameChat,
+      });
+
       await pusher.trigger(
         `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
         "investigation",
@@ -341,16 +335,17 @@ async function handleReverseInvestigation(par) {
       p.player._id.equals(par.selectedPlayerId)
     );
 
-    console.log(
-      "these is the username of player investigating",
-      playerClicking
-    );
-    console.log(
-      "these is the username of player being investigated",
-      playerBeingClicked
-    );
+
 
     if (playerClicking && playerBeingClicked) {
+      par.game.gameChat.push(
+        `${par.playerClickingUsername} chose  to show  ${par.selectedPlayerUsername} their role`
+      );
+
+      await pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
+        gamechat: par.game.gameChat,
+      });
+
       await pusher.trigger(
         `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
         "reverse investigation",
