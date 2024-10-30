@@ -1,6 +1,7 @@
 import connectToDB, { fisherYatesShuffle } from "@/lib/utils";
 import { Game, GameLobby } from "@/lib/models";
 import Pusher from "pusher";
+import { NextResponse } from "next/server";
 
 const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
 
@@ -37,12 +38,16 @@ export async function POST(req) {
     const players = shuffledPlayers.map((playerId, index) => {
       if (index === 0) {
         return { player: playerId, role: "Judge", teamlocked: false };
+      } else if (totalPlayers >= 9 && index === 1) {
+        // Assign the Blindman role to the second player if player count is 9 or more
+        return { player: playerId, role: "Blindman", teamlocked: false };
       } else if (index <= goodCount) {
         return { player: playerId, role: "Good", teamlocked: false };
       } else {
         return { player: playerId, role: "Evil", teamlocked: false };
       }
     });
+    console.log("these are the players", players);
 
     const currentRound = {
       judge: players.find((p) => p.role === "Judge").player,
@@ -65,6 +70,7 @@ export async function POST(req) {
       phase: "Judge Picks Partner",
       completed: false,
     };
+    console.log("this is the currentRound", currentRound);
     const previousTeam = {
       partner: null,
       associate: null,
@@ -81,26 +87,17 @@ export async function POST(req) {
       previousTeam,
       gameChat: ["Welcome to the Game!"],
     });
-    const judge = players.find((p) => p.role === "Judge").player.toString();
+    console.log("this is the new game ", newGame);
+    
     await newGame.save();
 
     await pusher.trigger(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
-    
-    return new Response(JSON.stringify({ status: 200 }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+
+    return NextResponse.json({ status: 200 });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Failed to initialise game" }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
+    return NextResponse.json(
+      { error: "Failed to initialise game" },
+      { status: 500 }
     );
   }
 }

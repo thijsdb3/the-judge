@@ -3,38 +3,41 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./Gamechat.module.css";
 import Pusher from "pusher-js";
+import { usePathname } from 'next/navigation'
 
 const Gamechat = ({ lobbyid }) => {
-  const [gameMessages, setGameMessages] = useState([]);
+  const pathname = usePathname();
+  const isGamePath = pathname.startsWith('/game/');
+  const [gameMessages, setGameMessages] = useState(["waiting on players..."]);
 
   const messagesEndRef = useRef(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
 
   // Fetch initial messages from the database on component mount
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const res = await fetch('/api/game/gamechat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ lobbyid }), // Send lobbyid in the POST body
-        });
-        
-        const data = await res.json();
-        setGameMessages(data.messages.length > 0 ? data.messages : ["Welcome to the Game!"]);
-      } catch (error) {
-        console.error("Error fetching messages:", error);
-      }
-    };
+    if (isGamePath && lobbyid) {
+      const fetchMessages = async () => {
+        try {
+          const res = await fetch('/api/game/gamechat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lobbyid }),
+          });
 
-    if (lobbyid) {
+          const data = await res.json();
+          setGameMessages(data.messages.length > 0 ? data.messages : ["Welcome to the Game!"]);
+        } catch (error) {
+          console.error("Error fetching messages:", error);
+        }
+      };
+
       fetchMessages();
     }
-  }, [lobbyid]);
+  }, [isGamePath, lobbyid]);
 
   // Subscribe to Pusher for real-time updates
   useEffect(() => {
-    if (lobbyid) {
+    if (isGamePath && lobbyid) {
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: "eu",
       });
@@ -46,7 +49,7 @@ const Gamechat = ({ lobbyid }) => {
       });
 
       channel.bind("gamechat", (data) => {
-        setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);   
+        setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);
       });
 
       return () => {
@@ -54,7 +57,7 @@ const Gamechat = ({ lobbyid }) => {
         channel.unsubscribe();
       };
     }
-  }, [lobbyid]);
+  }, [isGamePath, lobbyid]);
 
   // Auto-scroll behavior
   useEffect(() => {
@@ -63,7 +66,6 @@ const Gamechat = ({ lobbyid }) => {
     }
   }, [gameMessages, isScrolledUp]);
 
-  // Handle scroll detection
   const handleScroll = (e) => {
     const { scrollTop, scrollHeight, clientHeight } = e.target;
     if (scrollTop + clientHeight < scrollHeight - 50) {

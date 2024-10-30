@@ -1,43 +1,52 @@
-import connectToDB from '@/lib/utils'; 
-import { GameLobby } from '@/lib/models'; 
-import { getGameLobbies } from '@/lib/data';
-export async function POST(req) {
-  await connectToDB(); 
-  try {
-    const  id  = await req.json();
-    const newGameLobby = new GameLobby({gameid:id} ,
-      {players : []}
-     ) ;
-    await newGameLobby.save();
-    return new Response(
-      {status : 200}
-    )
+import connectToDB from "@/lib/utils";
+import { GameLobby } from "@/lib/models";
+import { getGameLobbies } from "@/lib/data";
+import { NextResponse } from "next/server";
 
-  } catch (error) {
-    return new Response(JSON.stringify({ error: 'Failed to save game ID' }), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+export async function POST(req) {
+  await connectToDB();
+
+  try {
+    const newGameLobby = new GameLobby({
+      players: [],
     });
+    console.log(newGameLobby);
+    const savedLobby = await newGameLobby.save();
+
+    return NextResponse.json({ gameid: savedLobby.gameid });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to create game" },
+      { status: 500 }
+    );
   }
 }
-export async function GET() {
+
+export async function GET(req) {
+  await connectToDB();
+  const id = new URL(req.url).searchParams.get("id");
+
+  if (id) {
+    try {
+      const gameExists = await GameLobby.exists({ gameid: id });
+      return NextResponse.json({ exists: !!gameExists });
+    } catch (error) {
+      console.error("Error checking game ID:", error);
+      return NextResponse.json(
+        { error: "Failed to check game ID" },
+        { status: 500 }
+      );
+    }
+  } else {
     try {
       const gamelobbies = await getGameLobbies();
-      return new Response(JSON.stringify(gamelobbies), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      return NextResponse.json(gamelobbies);
     } catch (error) {
-      console.error('Error fetching game IDs:', error);
-      return new Response(JSON.stringify({ error: 'Failed to fetch game IDs' }), {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      console.error("Error fetching game IDs:", error);
+      return NextResponse.json(
+        { error: "Failed to fetch game IDs" },
+        { status: 500 }
+      );
     }
   }
+}

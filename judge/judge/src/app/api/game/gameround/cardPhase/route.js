@@ -113,17 +113,20 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     const playercount = game.players.length;
 
     if (!isBlue && game.boardState.reds === 2) {
+      await clearRound(game)
       await transitionPhase(game, "Peek and Discard");
       return;
     }
-    if (!isBlue && game.boardState.reds === 3 && playercount >= 7) {
+    if (!isBlue && game.boardState.reds === 3 && playercount >= 4) {
+      await clearRound(game)
       await transitionPhase(game, "Judge picks investigator");
       return;
     }
     if (!isBlue && game.boardState.reds === 4) {
       game.HonestVetoEnabled = true;
       console.log("honest veto is:", game.HonestVetoEnabled);
-      if (playercount >= 11) {
+      if (playercount >= 4) {
+        await clearRound(game)
         await transitionPhase(game, "Judge picks reverse investigator");
         return;
       }
@@ -134,6 +137,8 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     }
 
     await clearRound(game);
+    await transitionPhase(game, "Judge Picks Partner");
+
   } else {
     if (userid === associate.id.toString()) {
       console.log("these are the associate user cards", userCards);
@@ -200,9 +205,8 @@ async function clearRound(game) {
   game.currentRound.partner.cards = null;
   game.currentRound.associate.cards = null;
   game.currentRound.paralegal.cards = null;
+  await game.save();
 
-  // Transition to the next phase after clearing the round
-  await transitionPhase(game, "Judge Picks Partner");
 }
 
 async function checkWinCondition(game, isBlue, lobbyid) {
@@ -224,7 +228,6 @@ async function checkWinCondition(game, isBlue, lobbyid) {
 }
 
 async function handleCorruptVeto(game) {
-  await game.populate("players.player");
   const partner = game.players.find((p) =>
     p.player._id.equals(game.currentRound.paralegal.id)
   );
@@ -260,7 +263,7 @@ async function handleCorruptVeto(game) {
 
 async function handleHonestVeto(game) {
   console.log("honest veto function runs");
-  await game.populate("players.player");
+
   const partner = game.players.find((p) =>
     p.player._id.equals(game.currentRound.paralegal.id)
   );

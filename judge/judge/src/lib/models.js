@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { nanoid } from "nanoid";
 
 const gameLobbiesSchema = new mongoose.Schema({
   gameid: {
@@ -6,6 +7,7 @@ const gameLobbiesSchema = new mongoose.Schema({
     required: true,
     unique: true,
     index: true,
+    default: () => nanoid(10),
   },
   players: [
     {
@@ -50,7 +52,7 @@ const gameSchema = new mongoose.Schema({
       role: {
         type: String,
         required: true,
-        enum: ["Judge", "Good", "Evil"],
+        enum: ["Judge", "Good", "Evil","Blindman"],
       },
       teamlocked: {
         type: Boolean,

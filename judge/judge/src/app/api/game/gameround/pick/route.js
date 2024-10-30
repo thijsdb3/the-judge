@@ -41,9 +41,10 @@ export async function POST(request) {
 
   const playerClickingId = playerClicking_._id;
   const phase = game.currentRound.phase;
-
+  const playercount = game.players.length;
   const args = {
     game: game,
+    playercount,
     playerClickingId: playerClickingId,
     selectedPlayerId: selectedPlayer_._id,
     selectedPlayerUsername: selectedPlayer_.username,
@@ -75,21 +76,12 @@ export async function POST(request) {
       break;
 
     case "Peek and Discard":
-      game.currentRound.partner.id = null;
-      game.currentRound.associate.id = null;
-      game.currentRound.paralegal.id = null;
       handlePeekAndDiscard(args);
       break;
     case "Judge picks investigator":
-      game.currentRound.partner.id = null;
-      game.currentRound.associate.id = null;
-      game.currentRound.paralegal.id = null;
       JudgePicksInvestigator(args);
       break;
     case "Judge picks reverse investigator":
-      game.currentRound.partner.id = null;
-      game.currentRound.associate.id = null;
-      game.currentRound.paralegal.id = null;
       JudgePicksReverseInvestigator(args);
       break;
     case "investigation":
@@ -108,7 +100,10 @@ export async function POST(request) {
 }
 
 function handleJudgePicksPartner(par) {
-  if (par.playerClickingId.equals(par.game.currentRound.judge)) {
+  if (
+    par.playerClickingId.equals(par.game.currentRound.judge) &&
+    !par.selectedPlayerId.equals(par.game.previousTeam.partner)
+  ) {
     par.game.currentRound.partner.id = par.selectedPlayerId;
     par.game.currentRound.phase = "Partner Picks Associate"; // Move to next phase
     par.game.gameChat.push(
@@ -124,7 +119,8 @@ function handleJudgePicksPartner(par) {
 function handlePartnerPicksAssociate(par) {
   if (
     par.playerClickingId.equals(par.game.currentRound.partner.id) &&
-    !par.selectedPlayerId.equals(par.game.currentRound.partner.id)
+    !par.selectedPlayerId.equals(par.game.currentRound.partner.id) &&
+    !par.selectedPlayerId.equals(par.game.previousTeam.associate)
   ) {
     par.game.currentRound.associate.id = par.selectedPlayerId;
     par.game.currentRound.phase = "Associate Picks Paralegal";
@@ -141,7 +137,8 @@ function handleAssociatePicksParalegal(par) {
   if (
     par.playerClickingId.equals(par.game.currentRound.associate.id) &&
     !par.selectedPlayerId.equals(par.game.currentRound.partner.id) &&
-    !par.selectedPlayerId.equals(par.game.currentRound.associate.id)
+    !par.selectedPlayerId.equals(par.game.currentRound.associate.id) &&
+    !par.selectedPlayerId.equals(par.game.previousTeam.paralegal)
   ) {
     par.game.currentRound.paralegal.id = par.selectedPlayerId;
     par.game.gameChat.push(
@@ -281,9 +278,6 @@ async function handleInvestigation(par) {
   ) {
     par.game.playerBeingInvestigated = par.selectedPlayerId;
 
-    // Populate players to retrieve player usernames
-    await par.game.populate("players.player");
-
     // Find the usernames of the player clicking and player being clicked
     const playerClicking = par.game.players.find((p) =>
       p.player._id.equals(par.playerClickingId)
@@ -324,9 +318,6 @@ async function handleReverseInvestigation(par) {
   ) {
     par.game.playerBeingReverseInvestigated = par.selectedPlayerId;
 
-    // Populate players to retrieve player usernames
-    await par.game.populate("players.player");
-
     // Find the usernames of the player clicking and player being clicked
     const playerClicking = par.game.players.find((p) =>
       p.player._id.equals(par.playerClickingId)
@@ -334,8 +325,6 @@ async function handleReverseInvestigation(par) {
     const playerBeingClicked = par.game.players.find((p) =>
       p.player._id.equals(par.selectedPlayerId)
     );
-
-
 
     if (playerClicking && playerBeingClicked) {
       par.game.gameChat.push(
@@ -350,8 +339,8 @@ async function handleReverseInvestigation(par) {
         `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
         "reverse investigation",
         {
-          playerReverseInvestigating: playerClicking.player.username,
-          playerBeingReverseInvestigated: playerBeingClicked.player.username,
+          playerReverseInvestigating: par.playerClickingUsername,
+          playerBeingReverseInvestigated: par.selectedPlayerUsername,
         }
       );
     } else {

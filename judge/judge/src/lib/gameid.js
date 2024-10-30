@@ -1,17 +1,19 @@
-
 export async function handleMakeGame(router) {
-  const newId = Math.floor(Math.random() * 10000000000).toString();
-
   try {
-    await fetch('/api/gameid', {
-      method: 'POST',
-      body: newId,
+    const response = await fetch("/api/gameid", {
+      method: "POST",
     });
-    router.push(`/gamelobby/${newId}`);
 
+    if (!response.ok) {
+      throw new Error("Failed to create game");
+    }
+
+    const data = await response.json();
+    const newGameId = data.gameid;
+
+    router.push(`/gamelobby/${newGameId}`);
   } catch (error) {
-    console.error('Error creating game:', error);
-    alert('Error creating game. Please try again.'); // replace by smth less annoying
+    console.error("Error creating game:", error);
   }
 }
 
@@ -20,19 +22,17 @@ export async function handleJoinGame(router) {
   if (!input) return;
 
   try {
-    const response = await fetch('/api/gameid', {
-      method: 'GET',
+    const response = await fetch(`/api/gameid?id=${input}`, {
+      method: "GET",
     });
-    const gamelobbies = await response.json();
-    const gameIdList = gamelobbies.map(game => game.gameid);
-   
-    if (gameIdList.includes(input)) {
+    const result = await response.json();
+
+    if (result.exists) {
       router.push(`/gamelobby/${input}`);
     } else {
-      alert("The Game ID you entered is invalid or does not match."); // replace by something less annoying
+      alert("The Game ID you entered is invalid or does not match."); // Replace alert with a friendlier UI message if needed
     }
   } catch (error) {
-    throw(error)
+    console.error("Error joining game:", error);
   }
 }
-

@@ -27,19 +27,20 @@ export async function POST(req) {
     }
 
     if (action === "join") {
-      if (!gameLobby.players.includes(userid)) {
-        gameLobby.players.push(userid); // Add user to players array
-      }
+      await GameLobby.updateOne(
+        { gameid: lobbyid },
+        { $addToSet: { players: userid } } 
+      );
     } else if (action === "leave") {
-      gameLobby.players = gameLobby.players.filter(
-        (player) => player.toString() !== userid
+      await GameLobby.updateOne(
+        { gameid: lobbyid },
+        { $pull: { players: userid } } 
       );
     }
 
     await gameLobby.save();
-    const updatedLobby = await GameLobby.findOne({ gameid: lobbyid }).populate(
-      "players"
-    );
+    const updatedLobby = await GameLobby.findOne({ gameid: lobbyid }).populate("players");
+
 
     // Trigger an update to all clients with the updated list of players
     await pusher.trigger(`gameUpdate-${lobbyid}`, "userList", {

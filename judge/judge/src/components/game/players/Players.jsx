@@ -11,7 +11,7 @@ const Players = ({ lobbyid, session }) => {
   const [players, setPlayers] = useState([]);
   const [currentPlayerRole, setCurrentPlayerRole] = useState(null);
   const [error, setError] = useState(null);
- 
+
   const [playerInvestigating, setPlayerInvestigating] = useState(null);
   const [playerBeingInvestigated, setPlayerBeingInvestigated] = useState(null);
   const [playerReverseInvestigating, setPlayerReverseInvestigating] = useState(null);
@@ -20,25 +20,30 @@ const Players = ({ lobbyid, session }) => {
   const username = session?.user.username;
   const userid = session?.user.id;
 
-  const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-    cluster: "eu",
-  });
+  useEffect(() => {
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: "eu",
+    });
 
-  const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
+    const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
 
-  useEffect(() => { 
     channel.bind("investigation", (data) => {
-      setPlayerInvestigating(data.playerInvestigating);   
+      setPlayerInvestigating(data.playerInvestigating);
       setPlayerBeingInvestigated(data.playerBeingInvestigated);
     });
 
-    channel.bind("reverse investigation", (data) => 
-      {
-    
-      setPlayerReverseInvestigating(data.playerReverseInvestigating);   
+    channel.bind("reverse investigation", (data) => {
+      setPlayerReverseInvestigating(data.playerReverseInvestigating);
       setPlayerBeingReverseInvestigated(data.playerBeingReverseInvestigated);
     });
-  }, [lobbyid, username]);
+
+    // Clean up on component unmount
+    return () => {
+      channel.unbind_all();
+      channel.unsubscribe();
+      pusher.disconnect();
+    };
+  }, [lobbyid, userid]);
 
   useEffect(() => {
     const fetchPlayers = async () => {
@@ -79,6 +84,7 @@ const Players = ({ lobbyid, session }) => {
     fetchPlayers();
   }, [lobbyid, username]);
 
+ 
   const getPlayerStyle = (playerRole, playerUsername) => {
     // Investigation role reveal: investigated player's role shown in blue if good, red if evil
     if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
@@ -88,13 +94,24 @@ const Players = ({ lobbyid, session }) => {
       return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
 
-    // Corrupt players see other corrupt players in red
+    // Evil players see other evil players in red
     if (currentPlayerRole === "Evil" && playerRole === "Evil") {
       return { color: 'red' };
     }
+
+    // Blindman sees their own role in darkred 
+    if (currentPlayerRole === "Blindman" && playerUsername === username) {
+      return { color: '#8B0000' };
+    }
+
     // Good players see their own role in blue
     if (currentPlayerRole === "Good" && playerUsername === username) {
       return { color: 'blue' };
+    }
+
+    // Evil players see the Blindman in dark red
+    if (currentPlayerRole === "Evil" && playerRole === "Blindman") {
+      return { color: '#8B0000' }; 
     }
 
     // Default color for other cases
@@ -102,7 +119,7 @@ const Players = ({ lobbyid, session }) => {
   };
 
   return (
-    <div className={styles.leftpart}>
+    <div >
       <h1 className={styles.title}>Players in Game</h1>
       <ul className={styles.playerlist}>
         {players.map((player, index) => (
@@ -124,6 +141,7 @@ const Players = ({ lobbyid, session }) => {
           </li>
         ))}
       </ul>
+      {error && <p className={styles.error}>{error}</p>}
     </div>
   );
 };

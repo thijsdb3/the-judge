@@ -1,35 +1,34 @@
-import {auth} from "@/lib/auth"
-import { getGameLobbies } from '@/lib/data';
-import  LobbyBody  from "@/components/gameLobby/LobbyBody"
+import Deck from "@/components/game/deck/Deck";
+import BoardState from "@/components/game/boardState/BoardState"
+import Gamechat from "@/components/game/gamechat/Gamechat";
+import LobbyBody from "@/components/gamelobby/LobbyBody";
 import styles from "./page.module.css"
-
-const GamePage =  async (context) => {
+import { auth } from "@/lib/auth";
+const GamePage = async (context) => {
+  const session = await auth()
   const id = context.params.id
-  const gamelobbies =  await getGameLobbies();
-  const gameIdList = gamelobbies.map(gamelobby => gamelobby.gameid);
-  if(gameIdList.includes(id)){
-    const session = await auth();
-    if(session){
-      return (
-        <div className = {styles.body}>
-              <h1 className = {styles.title}>Waiting for Players...</h1>
-          <div className = {styles.container}>
-            <LobbyBody className = {styles.list} session = {session} lobbyid = {id}/> 
-          </div>   
-        </div>
-      );
-    }
-    else {
-      return(
-        <div className = {styles.body}>
-        <h1> please log in </h1>
-      </div>
-      )
-    }
-  }
-  else {
-    return <h1> something went wrong </h1>
-  }
+  return (
+    <div classame = {styles.all}>
+      <div className = {styles.container }> 
+       <div className = {styles.leftpart} >
+       <LobbyBody lobbyid = {id} session = {session} />
+       </div>
+       <div className = {styles.rightpart}>
+        <div className ={styles.section}>
+       <Deck lobbyid = {id} session = {session}/>
+       <BoardState lobbyid = {id}/>
+       </div>
+       <div className ={styles.section}>
+       <Gamechat lobbyid={id}/>
+       </div>
+       </div>
+       </div>
+       
+    </div>
+    
+  );
 };
 
 export default GamePage;
+ 
+

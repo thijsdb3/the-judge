@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
-import styles from "./LobbyBoddy.module.css"
-
+import Image from "next/image";
+import styles from "./LobbyBoddy.module.css";
 
 const LobbyBody = ({ session, lobbyid }) => {
   const [players, setPlayers] = useState([]);
@@ -41,8 +41,8 @@ const LobbyBody = ({ session, lobbyid }) => {
         router.push(`/game/${lobbyid}`);
       });
 
-      const handleLeave = () => {
-        fetch('/api/playerlist', {
+      const handleLeave = async () => {
+        await fetch('/api/playerlist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userid, lobbyid, action: 'leave' }),
@@ -52,16 +52,17 @@ const LobbyBody = ({ session, lobbyid }) => {
       window.addEventListener('beforeunload', handleLeave);
 
       return () => {
-        handleLeave();
-        window.removeEventListener('beforeunload', handleLeave);
-        channel.unbind_all();
-        channel.unsubscribe();
+        (async () => {
+          await handleLeave();
+          window.removeEventListener('beforeunload', handleLeave);
+          channel.unbind_all();
+          channel.unsubscribe();
+        })();
       };
     }    
   }, [session, lobbyid]);
 
-  // Check if enough players are present to start the game (replace with 6 as required)
-  const canStartGame = players.length > 0; 
+  const canStartGame = players.length >= 0; 
 
   const handleStartGame = async () => {
     try {
@@ -81,13 +82,24 @@ const LobbyBody = ({ session, lobbyid }) => {
 
   return (
     <div >
-      <h1 className = {styles.title}>players in lobby</h1>
-      <ul className = {styles.player}>
+      <h1 className={styles.title}>Players in Game</h1>
+      <ul className={styles.playerlist}>
         {players.map((player, index) => (
-          <li key={index}>{player}</li>
+          <li
+            className={`${styles.playerlistelement} `}
+            key={index}
+          >
+            <Image
+              src={player.role === "Judge" ? "/images/judge-icon.png" : "/images/player.png"}
+              alt="Player Avatar"
+              width={30}
+              height={30}
+            />
+            {player}
+          </li>
         ))}
       </ul>
-      <button className ={styles.button} onClick={handleStartGame} disabled={!canStartGame}>
+      <button className={styles.button} onClick={handleStartGame} disabled={!canStartGame}>
         Start Game
       </button>
     </div>

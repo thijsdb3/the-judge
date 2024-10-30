@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import connectToDB from "@/lib/utils";
 import { Game } from "@/lib/models";
 
@@ -11,7 +12,7 @@ export async function POST(req) {
     ); // Populate player details from User model
 
     if (!game) {
-      throw new Error("Game not found");
+      return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
     // Extract usernames from the populated players
@@ -20,18 +21,9 @@ export async function POST(req) {
       role: p.role,
     }));
     
-    return new Response(JSON.stringify({ status: 200, players: playerData }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    return NextResponse.json({ status: 200, players: playerData }, { status: 200 });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Failed to get players" }), {
-      status: 500,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    console.error("Error fetching players:", error);
+    return NextResponse.json({ error: "Failed to get players" }, { status: 500 });
   }
 }
