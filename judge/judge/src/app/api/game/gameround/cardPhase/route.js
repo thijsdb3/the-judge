@@ -113,22 +113,24 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     const playercount = game.players.length;
 
     if (!isBlue && game.boardState.reds === 2) {
-      await clearRound(game)
+      await clearRound(game);
       await transitionPhase(game, "Peek and Discard");
-      return;
+      return NextResponse.json({ message: "peek initialised sucesfully" });
     }
     if (!isBlue && game.boardState.reds === 3 && playercount >= 4) {
-      await clearRound(game)
+      await clearRound(game);
       await transitionPhase(game, "Judge picks investigator");
-      return;
+      return NextResponse.json({ message: "prepped for inv successfully" });
     }
     if (!isBlue && game.boardState.reds === 4) {
       game.HonestVetoEnabled = true;
       console.log("honest veto is:", game.HonestVetoEnabled);
       if (playercount >= 4) {
-        await clearRound(game)
+        await clearRound(game);
         await transitionPhase(game, "Judge picks reverse investigator");
-        return;
+        return NextResponse.json({
+          message: "prepped for reverse inv sucesfully",
+        });
       }
     }
 
@@ -138,7 +140,6 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
 
     await clearRound(game);
     await transitionPhase(game, "Judge Picks Partner");
-
   } else {
     if (userid === associate.id.toString()) {
       console.log("these are the associate user cards", userCards);
@@ -185,6 +186,7 @@ async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
     cardsLeft: game.drawPile.length,
   });
   await clearRound(game);
+  await transitionPhase(game, "Judge Picks Partner");
   return NextResponse.json({ message: "Peek and Discard completed" });
 }
 
@@ -206,7 +208,6 @@ async function clearRound(game) {
   game.currentRound.associate.cards = null;
   game.currentRound.paralegal.cards = null;
   await game.save();
-
 }
 
 async function checkWinCondition(game, isBlue, lobbyid) {

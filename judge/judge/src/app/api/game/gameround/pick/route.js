@@ -299,15 +299,14 @@ async function handleInvestigation(par) {
         `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
         "investigation",
         {
-          playerInvestigating: playerClicking.player.username,
-          playerBeingInvestigated: playerBeingClicked.player.username,
+          playerInvestigating: par.playerClickingUsername,
+          playerBeingInvestigated: par.selectedPlayerUsername,
         }
       );
     } else {
       console.error("Player data could not be found for investigation.");
     }
   }
-
   par.game.currentRound.phase = "Judge Picks Partner";
 }
 
