@@ -89,7 +89,9 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
       }
     }
 
-    game.gameChat.push(isBlue ? "blue card enacted" : "red card enacted");
+    game.gameChat.push(
+      isBlue ? "blue evidence enacted" : "red evidence enacted"
+    );
     game.boardState[isBlue ? "blues" : "reds"] += 1;
 
     await Promise.all([
