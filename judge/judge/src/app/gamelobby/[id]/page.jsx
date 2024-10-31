@@ -10,8 +10,9 @@ const GamePage = async (context) => {
   const id = context.params.id; // Get lobby ID from params
 
   return (
-    <div className={styles.all}> 
+   <div>
       {session ? ( 
+        <div className={styles.all}> 
         <div className={styles.container}> 
           <div className={styles.leftpart}>
             <LobbyBody lobbyid={id} session={session} />
@@ -25,6 +26,7 @@ const GamePage = async (context) => {
               <Gamechat lobbyid={id} />
             </div>
           </div>
+        </div>
         </div>
       ) : (
         <h1 className={styles.title}>Please log in to access the game features.</h1>
