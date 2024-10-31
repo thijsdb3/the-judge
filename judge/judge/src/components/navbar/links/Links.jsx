@@ -34,7 +34,7 @@ const Links = ({ session }) => {
           <>
             {/* Signup Left of Login */}
             <div className = {styles.loginAndSignup}>
-            <NavLink item={{ title: "Signup", path: "/signup" }} />
+            {/* <NavLink item={{ title: "Signup", path: "/signup" }} /> */}
             <NavLink item={{ title: "Login", path: "/login" }} />
             </div>
           </>

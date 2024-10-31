@@ -9,6 +9,7 @@ const Game = async (context) => {
   const id = context.params.id
   return (
     <div classame = {styles.all}>
+    {session ? ( 
       <div className = {styles.container }> 
        <div className = {styles.leftpart} >
        <Players lobbyid = {id} session = {session} />
@@ -23,7 +24,9 @@ const Game = async (context) => {
        </div>
        </div>
        </div>
-       
+       ) : (
+        <h1 className={styles.title}>Please log in to access the game features.</h1>
+      )}
     </div>
     
   );
