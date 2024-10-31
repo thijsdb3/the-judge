@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import styles from "./Players.module.css";
 import Image from 'next/image';
 import { fisherYatesShuffle } from '@/lib/utils';
@@ -10,83 +10,84 @@ import Pusher from "pusher-js";
 const Players = ({ lobbyid, session }) => {
   const [players, setPlayers] = useState([]);
   const [currentPlayerRole, setCurrentPlayerRole] = useState(null);
-  const [error, setError] = useState(null);
-
-  const [playerInvestigating, setPlayerInvestigating] = useState(null);
-  const [playerBeingInvestigated, setPlayerBeingInvestigated] = useState(null);
-  const [playerReverseInvestigating, setPlayerReverseInvestigating] = useState(null);
-  const [playerBeingReverseInvestigated, setPlayerBeingReverseInvestigated] = useState(null);
+  const [investigationState, setInvestigationState] = useState({
+    playerInvestigating: null,
+    playerBeingInvestigated: null,
+    playerReverseInvestigating: null,
+    playerBeingReverseInvestigated: null,
+  });
 
   const username = session?.user.username;
   const userid = session?.user.id;
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-      cluster: "eu",
-    });
-
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: "eu" });
     const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
 
-    channel.bind("investigation", (data) => {
-      setPlayerInvestigating(data.playerInvestigating);
-      setPlayerBeingInvestigated(data.playerBeingInvestigated);
-    });
+    const handleInvestigation = (data) => {
+      setInvestigationState(prevState => ({
+        ...prevState,
+        playerInvestigating: data.playerInvestigating,
+        playerBeingInvestigated: data.playerBeingInvestigated,
+      }));
+    };
 
-    channel.bind("reverse investigation", (data) => {
-      setPlayerReverseInvestigating(data.playerReverseInvestigating);
-      setPlayerBeingReverseInvestigated(data.playerBeingReverseInvestigated);
-    });
+    const handleReverseInvestigation = (data) => {
+      setInvestigationState(prevState => ({
+        ...prevState,
+        playerReverseInvestigating: data.playerReverseInvestigating,
+        playerBeingReverseInvestigated: data.playerBeingReverseInvestigated,
+      }));
+    };
 
-    // Clean up on component unmount
+    channel.bind("investigation", handleInvestigation);
+    channel.bind("reverse investigation", handleReverseInvestigation);
+
     return () => {
-      channel.unbind_all();
+      channel.unbind("investigation", handleInvestigation);
+      channel.unbind("reverse investigation", handleReverseInvestigation);
       channel.unsubscribe();
       pusher.disconnect();
     };
   }, [lobbyid, userid]);
 
-  useEffect(() => {
-    const fetchPlayers = async () => {
-      if (!username) return;
+  const fetchPlayers = useCallback(async () => {
+    if (!username) return;
 
-      try {
-        const res = await fetch('/api/game/playerlist', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ lobbyid }),
-        });
+    try {
+      const res = await fetch('/api/game/playerlist', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lobbyid }),
+      });
 
-        if (res.ok) {
-          const data = await res.json();
-          const allPlayers = data.players;
-
-          const currentPlayer = allPlayers.find(player => player.username === username);
-
-          if (currentPlayer) {
-            setCurrentPlayerRole(currentPlayer.role);
-          }
-
-          const judgePlayer = allPlayers.find(player => player.role === "Judge");
-          const otherPlayers = allPlayers.filter(player => player.role !== "Judge");
-          const shuffledPlayers = fisherYatesShuffle(otherPlayers);
-          const orderedPlayers = judgePlayer ? [judgePlayer, ...shuffledPlayers] : shuffledPlayers;
-          setPlayers(orderedPlayers);
-        } else {
-          throw new Error('Failed to fetch players');
-        }
-      } catch (error) {
-        setError('Failed to fetch players');
+      if (!res.ok) {
+        throw new Error('Failed to fetch players');
       }
-    };
+      
+      const data = await res.json();
+      const allPlayers = data.players;
 
-    fetchPlayers();
+      const currentPlayer = allPlayers.find(player => player.username === username);
+      setCurrentPlayerRole(currentPlayer?.role);
+
+      const judgePlayer = allPlayers.find(player => player.role === "Judge");
+      const otherPlayers = allPlayers.filter(player => player.role !== "Judge");
+      const orderedPlayers = judgePlayer ? [judgePlayer, ...fisherYatesShuffle(otherPlayers)] : fisherYatesShuffle(otherPlayers);
+
+      setPlayers(orderedPlayers);
+    } catch(err) {
+      console.log(err)
+    }
   }, [lobbyid, username]);
 
- 
-  const getPlayerStyle = (playerRole, playerUsername) => {
-    // Investigation role reveal: investigated player's role shown in blue if good, red if evil
+  useEffect(() => {
+    fetchPlayers();
+  }, [fetchPlayers]);
+
+  const getPlayerStyle = useCallback((playerRole, playerUsername) => {
+    const { playerBeingInvestigated, playerInvestigating, playerReverseInvestigating, playerBeingReverseInvestigated } = investigationState;
+
     if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
       return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
@@ -94,32 +95,16 @@ const Players = ({ lobbyid, session }) => {
       return { color: playerRole === "Good" ? 'blue' : 'red' };
     }
 
-    // Evil players see other evil players in red
-    if (currentPlayerRole === "Evil" && playerRole === "Evil") {
-      return { color: 'red' };
-    }
+    if (currentPlayerRole === "Evil" && playerRole === "Evil") return { color: 'red' };
+    if (currentPlayerRole === "Blindman" && playerUsername === username) return { color: '#8B0000' };
+    if (currentPlayerRole === "Good" && playerUsername === username) return { color: 'blue' };
+    if (currentPlayerRole === "Evil" && playerRole === "Blindman") return { color: '#8B0000' };
 
-    // Blindman sees their own role in darkred 
-    if (currentPlayerRole === "Blindman" && playerUsername === username) {
-      return { color: '#8B0000' };
-    }
-
-    // Good players see their own role in blue
-    if (currentPlayerRole === "Good" && playerUsername === username) {
-      return { color: 'blue' };
-    }
-
-    // Evil players see the Blindman in dark red
-    if (currentPlayerRole === "Evil" && playerRole === "Blindman") {
-      return { color: '#8B0000' }; 
-    }
-
-    // Default color for other cases
     return { color: 'black' };
-  };
+  }, [currentPlayerRole, investigationState, username]);
 
   return (
-    <div >
+    <div>
       <h1 className={styles.title}>Players in Game</h1>
       <ul className={styles.playerlist}>
         {players.map((player, index) => (
@@ -127,9 +112,7 @@ const Players = ({ lobbyid, session }) => {
             className={`${styles.playerlistelement} ${styles.myTurn}`}
             key={index}
             style={getPlayerStyle(player.role, player.username)}
-            onClick={() => {
-              handlePick(player, lobbyid, username);
-            }}
+            onClick={() => handlePick(player, lobbyid, username)}
           >
             <Image
               src={player.role === "Judge" ? "/images/judge-icon.png" : "/images/player.png"}
@@ -141,7 +124,6 @@ const Players = ({ lobbyid, session }) => {
           </li>
         ))}
       </ul>
-      {error && <p className={styles.error}>{error}</p>}
     </div>
   );
 };
