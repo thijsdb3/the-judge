@@ -91,7 +91,7 @@ const LobbyBody = ({ session, lobbyid }) => {
           </li>
         ))}
       </ul>
-      <button className={styles.button} onClick={handleStartGame} disabled={players.length < 1}>
+      <button className={styles.button} onClick={handleStartGame} disabled={players.length < 6 || players.length > 13 }>
         Start Game
       </button>
     </div>

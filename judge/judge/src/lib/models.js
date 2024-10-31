@@ -54,10 +54,6 @@ const gameSchema = new mongoose.Schema({
         required: true,
         enum: ["Judge", "Good", "Evil","Blindman"],
       },
-      teamlocked: {
-        type: Boolean,
-        required: true,
-      },
     },
   ],
   boardState: {

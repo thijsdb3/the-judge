@@ -1,5 +1,6 @@
-import connectToDB, { fisherYatesShuffle } from "@/lib/utils";
+import connectToDB from "@/lib/utils";
 import { Game, GameLobby } from "@/lib/models";
+import { fisherYatesShuffle, assignRoles } from "@/lib/utils";
 import Pusher from "pusher";
 import { NextResponse } from "next/server";
 
@@ -17,11 +18,10 @@ const RED_CARDS_COUNT = 22;
 
 export async function POST(req) {
   try {
-    const { lobbyid } = await req.json(); // Destructure lobbyid from request body
-    await connectToDB(); // Connect to the database
+    const { lobbyid } = await req.json();
+    await connectToDB();
 
-    const gameLobby = await GameLobby.findOne({ gameid: lobbyid }); // Fetch game lobby by lobbyid
-
+    const gameLobby = await GameLobby.findOne({ gameid: lobbyid });
     if (!gameLobby) {
       throw new Error("Game lobby not found");
     }
@@ -31,46 +31,17 @@ export async function POST(req) {
       ...Array(RED_CARDS_COUNT).fill("red"),
     ]);
     const shuffledPlayers = fisherYatesShuffle(gameLobby.players);
-
-    const totalPlayers = shuffledPlayers.length;
-    const goodCount = Math.ceil((totalPlayers - 1) / 2);
-
-    const players = shuffledPlayers.map((playerId, index) => {
-      if (index === 0) {
-        return { player: playerId, role: "Judge", teamlocked: false };
-      } else if (totalPlayers >= 9 && index === 1) {
-        // Assign the Blindman role to the second player if player count is 9 or more
-        return { player: playerId, role: "Blindman", teamlocked: false };
-      } else if (index <= goodCount) {
-        return { player: playerId, role: "Good", teamlocked: false };
-      } else {
-        return { player: playerId, role: "Evil", teamlocked: false };
-      }
-    });
-    console.log("these are the players", players);
+    const players = assignRoles(shuffledPlayers);
 
     const currentRound = {
       judge: players.find((p) => p.role === "Judge").player,
-      partner: {
-        id: null,
-        cards: [],
-      },
-      associate: {
-        id: null,
-        cards: [],
-      },
-      paralegal: {
-        id: null,
-        cards: [],
-      },
-      playerpeeking: {
-        id: null,
-        cards: [],
-      },
+      partner: { id: null, cards: [] },
+      associate: { id: null, cards: [] },
+      paralegal: { id: null, cards: [] },
+      playerPeeking: { id: null, cards: [] },
       phase: "Judge Picks Partner",
-      completed: false,
     };
-    console.log("this is the currentRound", currentRound);
+
     const previousTeam = {
       partner: null,
       associate: null,
@@ -87,14 +58,15 @@ export async function POST(req) {
       previousTeam,
       gameChat: ["Welcome to the Game!"],
     });
-    console.log("this is the new game ", newGame);
-    
+
+
     await newGame.save();
 
     await pusher.trigger(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
 
     return NextResponse.json({ status: 200 });
   } catch (error) {
+    console.error("Error during game initialization:", error);
     return NextResponse.json(
       { error: "Failed to initialise game" },
       { status: 500 }

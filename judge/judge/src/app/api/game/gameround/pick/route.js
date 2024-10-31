@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDB from "@/lib/utils";
 import { Game, User } from "@/lib/models";
 import Pusher from "pusher";
-import { fisherYatesShuffle } from "@/lib/utils";
+import { isNotTeamLocked,reshuffleDeck} from "@/lib/utils";
 
 const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
 
@@ -12,6 +12,17 @@ const pusher = new Pusher({
   secret: PUSHER_SECRET,
   cluster: "eu",
 });
+
+async function triggerPusherEvent(channel, event, data) {
+  try {
+    await pusher.trigger(channel, event, data);
+  } catch (error) {
+    console.error(
+      `Error triggering Pusher event: ${event} on ${channel}`,
+      error
+    );
+  }
+}
 
 export async function POST(request) {
   const { lobbyid, selectedPlayer, playerClicking } = await request.json();
@@ -43,13 +54,13 @@ export async function POST(request) {
   const phase = game.currentRound.phase;
   const playercount = game.players.length;
   const args = {
-    game: game,
+    game,
     playercount,
-    playerClickingId: playerClickingId,
+    playerClickingId,
     selectedPlayerId: selectedPlayer_._id,
     selectedPlayerUsername: selectedPlayer_.username,
     playerClickingUsername: playerClicking,
-    lobbyid: lobbyid,
+    lobbyid,
   };
 
   if (
@@ -64,31 +75,31 @@ export async function POST(request) {
 
   switch (phase) {
     case "Judge Picks Partner":
-      handleJudgePicksPartner(args);
+      await handleJudgePicksPartner(args);
       break;
 
     case "Partner Picks Associate":
-      handlePartnerPicksAssociate(args);
+      await handlePartnerPicksAssociate(args);
       break;
 
     case "Associate Picks Paralegal":
-      handleAssociatePicksParalegal(args);
+      await handleAssociatePicksParalegal(args);
       break;
 
     case "Peek and Discard":
-      handlePeekAndDiscard(args);
+      await handlePeekAndDiscard(args);
       break;
     case "Judge picks investigator":
-      JudgePicksInvestigator(args);
+      await judgePicksInvestigator(args);
       break;
     case "Judge picks reverse investigator":
-      JudgePicksReverseInvestigator(args);
+      await judgePicksReverseInvestigator(args);
       break;
     case "investigation":
-      handleInvestigation(args);
+      await handleInvestigation(args);
       break;
     case "reverse investigation":
-      handleReverseInvestigation(args);
+      await handleReverseInvestigation(args);
       break;
 
     default:
@@ -99,210 +110,157 @@ export async function POST(request) {
   return NextResponse.json({ success: true });
 }
 
-function handleJudgePicksPartner(par) {
+async function handleJudgePicksPartner(par) {
   if (
     par.playerClickingId.equals(par.game.currentRound.judge) &&
     !par.selectedPlayerId.equals(par.game.previousTeam.partner)
   ) {
-    par.game.currentRound.partner.id = par.selectedPlayerId;
-    par.game.currentRound.phase = "Partner Picks Associate"; // Move to next phase
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Partner`
-    );
+    const playercount = par.playercount;
+    if (
+      isNotTeamLocked(par.game, par.selectedPlayerId, playercount)
+    ) {
+      par.game.currentRound.partner.id = par.selectedPlayerId;
+      par.game.currentRound.phase = "Partner Picks Associate";
+      par.game.gameChat.push(
+        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Partner`
+      );
 
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
+        gamechat: par.game.gameChat,
+      });
+    }
   }
 }
 
-function handlePartnerPicksAssociate(par) {
+async function handlePartnerPicksAssociate(par) {
   if (
     par.playerClickingId.equals(par.game.currentRound.partner.id) &&
     !par.selectedPlayerId.equals(par.game.currentRound.partner.id) &&
     !par.selectedPlayerId.equals(par.game.previousTeam.associate)
   ) {
-    par.game.currentRound.associate.id = par.selectedPlayerId;
-    par.game.currentRound.phase = "Associate Picks Paralegal";
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Associate`
-    );
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+    const playercount = par.playercount;
+    if (
+      isNotTeamLocked(par.game, par.selectedPlayerId, playercount)
+    ) {
+      par.game.currentRound.associate.id = par.selectedPlayerId;
+      par.game.currentRound.phase = "Associate Picks Paralegal";
+      par.game.gameChat.push(
+        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Associate`
+      );
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
+        gamechat: par.game.gameChat,
+      });
+    }
   }
 }
 
-function handleAssociatePicksParalegal(par) {
+async function handleAssociatePicksParalegal(par) {
   if (
     par.playerClickingId.equals(par.game.currentRound.associate.id) &&
     !par.selectedPlayerId.equals(par.game.currentRound.partner.id) &&
     !par.selectedPlayerId.equals(par.game.currentRound.associate.id) &&
     !par.selectedPlayerId.equals(par.game.previousTeam.paralegal)
   ) {
-    par.game.currentRound.paralegal.id = par.selectedPlayerId;
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
-    );
+    const playercount = par.playercount;
+    if (
+      isNotTeamLocked(par.game, par.selectedPlayerId, playercount)
+    ) {
+      par.game.currentRound.paralegal.id = par.selectedPlayerId;
+      par.game.gameChat.push(
+        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
+      );
 
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
-    setUpForNextCardPhase(par);
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
+        gamechat: par.game.gameChat,
+      });
+      await setUpForNextCardPhase(par);
+    }
   }
 }
 
-function setUpForNextCardPhase(par) {
+async function setUpForNextCardPhase(par) {
   if (par.game.drawPile.length >= 6) {
     par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
     par.game.currentRound.paralegal.cards = par.game.drawPile.slice(3, 6);
     par.game.drawPile.splice(0, 6);
   } else if (par.game.drawPile.length >= 3) {
     par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
-    par.game.drawPile = reshuffledeck(par.game);
+    par.game.drawPile = reshuffleDeck(par.game);
     par.game.currentRound.paralegal.cards = par.game.drawPile.slice(0, 3);
     par.game.drawPile.splice(0, 3);
   } else {
-    // impossible scenario with current implementation of game
-    par.game.drawPile = reshuffledeck(par.game);
+    par.game.drawPile = reshuffleDeck(par.game);
     par.game.currentRound.associate.cards = par.game.drawPile.slice(0, 3);
     par.game.currentRound.paralegal.cards = par.game.drawPile.slice(3, 6);
     par.game.drawPile.splice(0, 6);
   }
 
-  pusher.trigger(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
+  await triggerPusherEvent(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
     cardsLeft: par.game.drawPile.length,
   });
   par.game.currentRound.phase = "seeCards";
-  pusher.trigger(
+  await triggerPusherEvent(
     `gameUpdate-${par.game.gameid}-${par.game.currentRound.associate.id}`,
     "cardPhaseStarted",
     {}
   );
 
-  pusher.trigger(
+  await triggerPusherEvent(
     `gameUpdate-${par.game.gameid}-${par.game.currentRound.paralegal.id}`,
     "cardPhaseStarted",
     {}
   );
 }
 
-function reshuffledeck(game) {
-  const drawPile = game.drawPile;
-  const discardPile = game.discardPile;
-  const newDeck = drawPile.concat(discardPile);
-  const shuffledDeck = fisherYatesShuffle(newDeck);
 
-  game.discardPile = [];
 
-  return shuffledDeck;
-}
+async function handlePeekAndDiscard(par) {
+  if (par.playerClickingId.equals(par.game.currentRound.judge) && par.game.currentRound.playerPeeking.id == null) {
+    par.game.currentRound.playerPeeking = { id: par.selectedPlayerId, cards: [] };
+    par.game.gameChat.push(`${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to peek at cards and discard`);
 
-function handlePeekAndDiscard(par) {
-  // check if the player selecting is the Judge and nobody has been selected yet
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.currentRound.playerPeeking.id == null
-  ) {
-    par.game.currentRound.playerPeeking = {
-      id: par.selectedPlayerId,
-      cards: [],
-    };
+    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", { gamechat: par.game.gameChat });
+    par.game.currentRound.playerPeeking.cards = par.game.drawPile.splice(0, 2);
 
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to peek at cards and discard`
-    );
-
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
-    par.game.currentRound.playerPeeking.cards = par.game.drawPile.slice(0, 2);
-    par.game.drawPile.splice(0, 2);
-    // Signal to the selected player to start the card peeking and discarding phase
-    pusher.trigger(
-      `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
-      "peekAndDiscardPhaseStarted",
-      {
-        cards: par.game.currentRound.playerPeeking.cards,
-      }
-    );
-
-    pusher.trigger(`gameUpdate-${par.game.gameid}`, "updateDeckCount", {
-      cardsLeft: par.game.drawPile.length,
-    });
+    await triggerPusherEvent(`gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`, "peekAndDiscardPhaseStarted", { cards: par.game.currentRound.playerPeeking.cards });
+    await triggerPusherEvent(`gameUpdate-${par.game.gameid}`, "updateDeckCount", { cardsLeft: par.game.drawPile.length });
   }
 }
 
-function JudgePicksInvestigator(par) {
-  // check if the player selecting is the Judge and nobody has been selected yet
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.playerInvestigating == null
-  ) {
+async function judgePicksInvestigator(par) {
+  if (par.playerClickingId.equals(par.game.currentRound.judge) && par.game.playerInvestigating == null) {
     par.game.playerInvestigating = par.selectedPlayerId;
+    par.game.gameChat.push(`${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to investigate`);
 
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to investigate`
-    );
-
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", { gamechat: par.game.gameChat });
     par.game.currentRound.phase = "investigation";
   }
 }
 
-function JudgePicksReverseInvestigator(par) {
-  // check if the player selecting is the Judge and nobody has been selected yet
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.playerReverseInvestigating == null
-  ) {
+async function judgePicksReverseInvestigator(par) {
+  if (par.playerClickingId.equals(par.game.currentRound.judge) && par.game.playerReverseInvestigating == null) {
     par.game.playerReverseInvestigating = par.selectedPlayerId;
+    par.game.gameChat.push(`${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to reverse investigate`);
 
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to reverse investigate`
-    );
-
-    pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", { gamechat: par.game.gameChat });
     par.game.currentRound.phase = "reverse investigation";
   }
 }
 
 async function handleInvestigation(par) {
-  if (
-    par.playerClickingId.equals(par.game.playerInvestigating) &&
-    par.game.playerBeingInvestigated == null
-  ) {
+  if (par.playerClickingId.equals(par.game.playerInvestigating) && par.game.playerBeingInvestigated == null) {
     par.game.playerBeingInvestigated = par.selectedPlayerId;
-
-    // Find the usernames of the player clicking and player being clicked
-    const playerClicking = par.game.players.find((p) =>
-      p.player._id.equals(par.playerClickingId)
-    );
-    const playerBeingClicked = par.game.players.find((p) =>
-      p.player._id.equals(par.selectedPlayerId)
-    );
+    const playerClicking = par.game.players.find(p => p.player._id.equals(par.playerClickingId));
+    const playerBeingClicked = par.game.players.find(p => p.player._id.equals(par.selectedPlayerId));
 
     if (playerClicking && playerBeingClicked) {
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} chose  to see ${par.selectedPlayerUsername}'s role`
-      );
+      par.game.gameChat.push(`${par.playerClickingUsername} chose to see ${par.selectedPlayerUsername}'s role`);
 
-      await pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", { gamechat: par.game.gameChat });
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}-${par.playerClickingId}`, "investigation", {
+        playerInvestigating: par.playerClickingUsername,
+        playerBeingInvestigated: par.selectedPlayerUsername,
       });
-
-      await pusher.trigger(
-        `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
-        "investigation",
-        {
-          playerInvestigating: par.playerClickingUsername,
-          playerBeingInvestigated: par.selectedPlayerUsername,
-        }
-      );
     } else {
       console.error("Player data could not be found for investigation.");
     }
@@ -311,43 +269,24 @@ async function handleInvestigation(par) {
 }
 
 async function handleReverseInvestigation(par) {
-  if (
-    par.playerClickingId.equals(par.game.playerReverseInvestigating) &&
-    par.game.playerBeingReverseInvestigated == null
-  ) {
+  if (par.playerClickingId.equals(par.game.playerReverseInvestigating) && par.game.playerBeingReverseInvestigated == null) {
     par.game.playerBeingReverseInvestigated = par.selectedPlayerId;
-
-    // Find the usernames of the player clicking and player being clicked
-    const playerClicking = par.game.players.find((p) =>
-      p.player._id.equals(par.playerClickingId)
-    );
-    const playerBeingClicked = par.game.players.find((p) =>
-      p.player._id.equals(par.selectedPlayerId)
-    );
+    const playerClicking = par.game.players.find(p => p.player._id.equals(par.playerClickingId));
+    const playerBeingClicked = par.game.players.find(p => p.player._id.equals(par.selectedPlayerId));
 
     if (playerClicking && playerBeingClicked) {
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} chose  to show  ${par.selectedPlayerUsername} their role`
-      );
+      par.game.gameChat.push(`${par.playerClickingUsername} chose to show ${par.selectedPlayerUsername} their role`);
 
-      await pusher.trigger(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", { gamechat: par.game.gameChat });
+      await triggerPusherEvent(`gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`, "reverse investigation", {
+        playerReverseInvestigating: par.playerClickingUsername,
+        playerBeingReverseInvestigated: par.selectedPlayerUsername,
       });
-
-      await pusher.trigger(
-        `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
-        "reverse investigation",
-        {
-          playerReverseInvestigating: par.playerClickingUsername,
-          playerBeingReverseInvestigated: par.selectedPlayerUsername,
-        }
-      );
     } else {
-      console.error(
-        "Player data could not be found for reverse investigation."
-      );
+      console.error("Player data could not be found for reverse investigation.");
     }
   }
-
   par.game.currentRound.phase = "Judge Picks Partner";
 }
+
+

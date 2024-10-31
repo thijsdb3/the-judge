@@ -28,10 +28,10 @@ const BoardState = ({ lobbyid }) => {
           }
       
           const data = await res.json();
-          if(data.numberOfBlues && data.numberOfReds){
-            setBlueState(data.numberOfBlues);
-            setRedState(data.numberOfReds);
-          }
+
+          setBlueState(data.numberOfBlues);
+          setRedState(data.numberOfReds);
+          
           
         } catch (error) {
           console.error('Error parsing JSON response:', error);
