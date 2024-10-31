@@ -11,7 +11,7 @@ const GamePage = async (context) => {
 
   return (
     <div className={styles.all}> 
-      {session ? ( -
+      {session ? ( 
         <div className={styles.container}> 
           <div className={styles.leftpart}>
             <LobbyBody lobbyid={id} session={session} />

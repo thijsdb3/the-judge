@@ -134,7 +134,7 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
       }
     }
 
-    if (isBlue && game.boardState.blues === 4) {
+    if (isBlue && game.boardState.blues === 4 && game.boardState.reds === 4) {
       game.CorruptVetoEnabled = true;
     }
 
