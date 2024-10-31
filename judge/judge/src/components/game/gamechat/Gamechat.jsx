@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./Gamechat.module.css";
+import styles from "./gamechat.module.css";
 import Pusher from "pusher-js";
 import { usePathname } from 'next/navigation'
 
