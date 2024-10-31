@@ -11,7 +11,11 @@ const GamePage = async (context) => {
     <div classame = {styles.all}>
       <div className = {styles.container }> 
        <div className = {styles.leftpart} >
-       <LobbyBody lobbyid = {id} session = {session} />
+       {session ? (
+            <LobbyBody lobbyid={id} session={session} />
+          ) : (
+            <h1 className = {styles.title}>Please log in to access the lobby.</h1>
+          )}
        </div>
        <div className = {styles.rightpart}>
         <div className ={styles.section}>

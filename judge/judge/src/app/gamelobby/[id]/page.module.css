@@ -43,4 +43,6 @@
   .section:last-child {
     border-bottom: none; /* Remove border from the last section */
   }
-  
+  .title{
+    color:black;
+  }
