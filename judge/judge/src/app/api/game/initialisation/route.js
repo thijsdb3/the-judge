@@ -30,9 +30,8 @@ export async function POST(req) {
       ...Array(BLUE_CARDS_COUNT).fill("blue"),
       ...Array(RED_CARDS_COUNT).fill("red"),
     ]);
-    const shuffledPlayers = fisherYatesShuffle(gameLobby.players);
-    const players = assignRoles(shuffledPlayers);
-
+    const players = assignRoles(gameLobby.players);
+    console.log(players);
     const currentRound = {
       judge: players.find((p) => p.role === "Judge").player,
       partner: { id: null, cards: [] },
@@ -58,7 +57,6 @@ export async function POST(req) {
       previousTeam,
       gameChat: ["Welcome to the Game!"],
     });
-
 
     await newGame.save();
 

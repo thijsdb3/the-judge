@@ -56,17 +56,36 @@ export const isNotTeamLocked = (game, selectedPlayer, playerCount) => {
   );
 };
 
-
-export const assignRoles = (shuffledPlayers) => {
+export const assignRoles = (players) => {
+  const shuffledPlayers = fisherYatesShuffle(players);
   const totalPlayers = shuffledPlayers.length;
-  const players = [];
+  const assignedRoles = [];
 
-  players.push({ player: shuffledPlayers[0], role: "Judge" });
+  const volunteeredPlayers = shuffledPlayers.filter(
+    (player) => player.judgeFlag
+  );
+
+  // Assign Judge
+  let judge;
+  if (volunteeredPlayers.length > 0) {
+    const judgeIndex = Math.floor(Math.random() * volunteeredPlayers.length);
+    judge = volunteeredPlayers[judgeIndex];
+  } else {
+    const judgeIndex = Math.floor(Math.random() * totalPlayers);
+    judge = shuffledPlayers[judgeIndex];
+  }
+  assignedRoles.push({ player: judge.id, role: "Judge" });
+
+  // Prepare remaining players list excluding the judge
+  const remainingPlayers = shuffledPlayers.filter(
+    (player) => player.id !== judge.id
+  );
 
   let goodCount = 0,
     evilCount = 0,
     blindmanCount = 0;
 
+  // Set counts based on totalPlayers
   switch (totalPlayers) {
     case 4:
       goodCount = 2;
@@ -117,19 +136,24 @@ export const assignRoles = (shuffledPlayers) => {
       throw new Error("Unsupported number of players. Supported counts: 4-13.");
   }
 
+  // Assign Blindman if applicable
   if (blindmanCount > 0) {
-    players.push({ player: shuffledPlayers[1], role: "Blindman" });
+    assignedRoles.push({ player: remainingPlayers[0].id, role: "Blindman" });
+    remainingPlayers.shift(); // Remove the assigned player from the list
   }
 
-  for (let i = blindmanCount + 1; i <= blindmanCount + evilCount; i++) {
-    players.push({ player: shuffledPlayers[i], role: "Evil" });
+  // Assign Evil roles
+  for (let i = 0; i < evilCount; i++) {
+    assignedRoles.push({ player: remainingPlayers[i].id, role: "Evil" });
   }
 
-  for (let i = blindmanCount + evilCount + 1; i < totalPlayers; i++) {
-    players.push({ player: shuffledPlayers[i], role: "Good" });
+  // Assign Good roles
+  for (let i = evilCount; i < evilCount + goodCount; i++) {
+    assignedRoles.push({ player: remainingPlayers[i].id, role: "Good" });
   }
 
-  return players;
+
+  return assignedRoles;
 };
 
 export default connectToDB;

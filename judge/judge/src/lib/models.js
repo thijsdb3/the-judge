@@ -11,8 +11,8 @@ const gameLobbiesSchema = new mongoose.Schema({
   },
   players: [
     {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+      judgeFlag: { type: Boolean, default: false },
     },
   ],
 });
@@ -52,7 +52,7 @@ const gameSchema = new mongoose.Schema({
       role: {
         type: String,
         required: true,
-        enum: ["Judge", "Good", "Evil","Blindman"],
+        enum: ["Judge", "Good", "Evil", "Blindman"],
       },
     },
   ],
@@ -120,13 +120,15 @@ const gameSchema = new mongoose.Schema({
       ],
     },
   },
-  playerInvestigating :{
-    type: mongoose.Schema.Types.ObjectId, ref: "User" ,
-    default : null,
+  playerInvestigating: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
-  playerReverseInvestigating :{
-    type: mongoose.Schema.Types.ObjectId, ref: "User" ,
-    default : null,
+  playerReverseInvestigating: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
   },
 
   previousTeam: {

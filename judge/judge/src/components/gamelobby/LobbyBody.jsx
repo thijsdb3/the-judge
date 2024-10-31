@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
@@ -7,6 +7,7 @@ import styles from "./LobbyBoddy.module.css";
 
 const LobbyBody = ({ session, lobbyid }) => {
   const [players, setPlayers] = useState([]);
+  const [volunteered, setVolunteered] = useState(false); // Track if the button has been clicked
   const router = useRouter();
   
   const updatePlayerStatus = async (action) => {
@@ -14,7 +15,7 @@ const LobbyBody = ({ session, lobbyid }) => {
       await fetch('/api/playerlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userid : session?.user.id, lobbyid, action }),
+        body: JSON.stringify({ userid: session?.user.id, lobbyid, action }),
       });
     } catch (error) {
       console.error(`Error ${action}ing game:`, error);
@@ -33,7 +34,6 @@ const LobbyBody = ({ session, lobbyid }) => {
 
     channel.bind('pusher:subscription_succeeded', () => updatePlayerStatus('join'));
 
-    // Debounced update to avoid flickering
     const debouncedUpdatePlayers = (newPlayers) => {
       setPlayers((prevPlayers) => {
         if (JSON.stringify(prevPlayers) !== JSON.stringify(newPlayers)) {
@@ -75,6 +75,11 @@ const LobbyBody = ({ session, lobbyid }) => {
     }
   }, [lobbyid]);
 
+  const handleVolunteerClick = () => {
+    setVolunteered(true);
+    updatePlayerStatus("volunteer");
+  };
+
   return (
     <div>
       <h1 className={styles.title}>Players in Game</h1>
@@ -91,9 +96,17 @@ const LobbyBody = ({ session, lobbyid }) => {
           </li>
         ))}
       </ul>
-      <button className={styles.button} onClick={handleStartGame} disabled={players.length < 6 || players.length > 13 }>
-        Start Game
-      </button>
+      <div className={styles.buttons}>
+        <button className={styles.button} onClick={handleStartGame} disabled={players.length < 6 || players.length > 13}>
+          Start Game
+        </button>
+        <button
+          className={`${styles.button} ${volunteered ? styles.clicked : ""}`}
+          onClick={handleVolunteerClick}
+        >
+          Volunteer to be the Judge
+        </button>
+      </div>
     </div>
   );
 };

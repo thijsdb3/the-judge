@@ -125,7 +125,7 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     if (!isBlue && game.boardState.reds === 4) {
       game.HonestVetoEnabled = true;
       console.log("honest veto is:", game.HonestVetoEnabled);
-      if (playercount >= 11) {
+      if (playercount >= 9) {
         await clearRound(game);
         await transitionPhase(game, "Judge picks reverse investigator");
         return NextResponse.json({
@@ -315,6 +315,7 @@ async function handleHonestVeto(game) {
       await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
         gamechat: game.gameChat,
       });
+      await clearRound(game);
       await transitionPhase(game, "Judge Picks Partner");
       return true;
     }

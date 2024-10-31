@@ -29,22 +29,26 @@ export async function POST(req) {
     if (action === "join") {
       await GameLobby.updateOne(
         { gameid: lobbyid },
-        { $addToSet: { players: userid } } 
+        { $addToSet: { players: { id: userid, judgeFlag: false } } }
+      );
+    } else if (action === "volunteer") {
+      await GameLobby.updateOne(
+        { gameid: lobbyid, "players.id": userid },
+        { $set: { "players.$.judgeFlag": true } }
       );
     } else if (action === "leave") {
       await GameLobby.updateOne(
         { gameid: lobbyid },
-        { $pull: { players: userid } } 
+        { $pull: { players: { id: userid } } }
       );
     }
-
     await gameLobby.save();
-    const updatedLobby = await GameLobby.findOne({ gameid: lobbyid }).populate("players");
+    const updatedLobby = await GameLobby.findOne({ gameid: lobbyid }).populate(
+      "players.id"
+    );
 
-
-    // Trigger an update to all clients with the updated list of players
     await pusher.trigger(`gameUpdate-${lobbyid}`, "userList", {
-      users: updatedLobby.players.map((player) => player.username), // Send the updated user list
+      users: updatedLobby.players.map((player) => player.id.username),
     });
 
     return NextResponse.json(
