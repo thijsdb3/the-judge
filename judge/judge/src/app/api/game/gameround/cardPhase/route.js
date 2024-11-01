@@ -175,21 +175,15 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
 
 async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
   const peekedCards = game.currentRound.playerPeeking.cards;
-  console.log("these are the peeked cards", peekedCards);
 
   if (discardOption === "discardOne" && card) {
     const remainingCards = peekedCards.filter(
       (c, i) => i !== peekedCards.indexOf(card)
     );
     game.drawPile.unshift(...remainingCards);
-    console.log("this is the remaining card:", remainingCards);
-    console.log("this is the discarded card:", card);
-    console.log("this is the deck:", game.drawPile);
     game.discardPile.push(card);
-    console.log("this is the discardPile:", game.discardPile);
   } else if (discardOption === "discardNone") {
     game.drawPile.unshift(...peekedCards);
-    console.log("this is the deck if discardnone:", game.drawPile);
   }
 
   await triggerPusherEvent(`gameUpdate-${lobbyid}`, "updateDeckCount", {

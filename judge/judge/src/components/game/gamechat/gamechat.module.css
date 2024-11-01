@@ -4,7 +4,7 @@
     background-color: #f0f0f0;
     padding: 10px;
     border: 1px solid #ccc;
-    border-radius: 4px;
+    border-radius: 10px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -23,7 +23,7 @@
     border: none;
     cursor: pointer;
     font-family: 'Arial', sans-serif;
-    border-radius: 4px;
+    border-radius: 10px;
   }
   
   .active {
@@ -43,7 +43,7 @@
     margin-bottom: 5px;
     background-color: #ffffff;
     border: 1px solid #ddd;
-    border-radius: 3px;
+    border-radius: 10px;
     font-family: 'Arial', sans-serif;
     color: black;
   }

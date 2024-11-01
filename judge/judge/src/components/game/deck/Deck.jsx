@@ -190,7 +190,7 @@ const Deck = ({ lobbyid, session }) => {
   <div>
     {userCards.map((card, index) => (
       <div key={index} className={styles.cardContainer}>
-        <div className={styles.cardlayout}>
+        <div className={styles.cardpeeklayout}>
           <Image 
             src={`/images/${card}.png`} 
             alt={`Card ${card}`} 
@@ -199,21 +199,25 @@ const Deck = ({ lobbyid, session }) => {
             height={100} 
           />
           {playerPeeking && (
+            <div classname= {styles.buttoncontainer}>
             <button 
-              className={styles.discardthis} 
+              className={styles.buttondiscard} 
               onClick={() => handlePeekAction('discardOne', card)}>
               Discard This
             </button>
+            </div>
           )}
         </div>
       </div>
     ))}
     {playerPeeking && (
+      <div classname= {styles.buttoncontainer}>
       <button 
-        className={styles.putbothback} 
+        className={styles.buttonputback} 
         onClick={() => handlePeekAction('putBack')}>
         Put Both Back
       </button>
+      </div>
     )}
   </div>
 )}
