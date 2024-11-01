@@ -1,23 +1,14 @@
-"use client";
-import { useRouter } from 'next/navigation'
 import styles from "./HomePage.module.css";
-import { handleJoinGame,handleMakeGame } from "@/lib/gameid";
-
+import MakeGameButton from "@/components/HomePage/StartGameButton";
+import JoinGameButton from "@/components/HomePage/JoinGameButton";
 
 const HomePage = () => {
-  const router = useRouter();
-
   return (
     <div className={styles.container}>
-      <button onClick={() => handleMakeGame(router)} className={styles.button}>
-        Make Game
-      </button>
-      <button onClick={() => handleJoinGame(router)} className={styles.button}>
-        Join Game
-      </button>
+      <MakeGameButton />
+      <JoinGameButton />
     </div>
   );
 };
-
 
 export default HomePage;

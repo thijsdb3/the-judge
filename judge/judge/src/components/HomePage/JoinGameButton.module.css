@@ -1,0 +1,18 @@
+.button {
+    padding: 40px 100px; /* Bigger buttons */
+    font-size: 24px; /* Larger text */
+    background-color:#6488EA; 
+    color: #E7DFDD;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Add a hover effect */
+}
+
+.button:hover {
+    background-color: #005bb5; /* Darken the button color on hover */
+    transform: scale(1.05); 
+    transition: 0.2s ease-in-out; 
+
+}

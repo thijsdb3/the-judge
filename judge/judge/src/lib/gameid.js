@@ -30,7 +30,7 @@ export async function handleJoinGame(router) {
     if (result.exists) {
       router.push(`/gamelobby/${input}`);
     } else {
-      alert("The Game ID you entered is invalid or does not match."); // Replace alert with a friendlier UI message if needed
+      alert("The Game ID you entered is invalid or does not match.");
     }
   } catch (error) {
     console.error("Error joining game:", error);
