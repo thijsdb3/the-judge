@@ -13,6 +13,17 @@ const pusher = new Pusher({
   cluster: "eu",
 });
 
+async function triggerPusherEvent(channel, event, data) {
+  try {
+    await pusher.trigger(channel, event, data);
+  } catch (error) {
+    console.error(
+      `Error triggering Pusher event: ${event} on ${channel}`,
+      error
+    );
+  }
+}
+
 export async function POST(request) {
   const { lobbyid, userid, action, card, discardOption } = await request.json();
   await connectToDB();
@@ -52,14 +63,10 @@ export async function POST(request) {
 // Function to handle seeing cards
 async function handleSeeCards(game, userCards, lobbyid, userid) {
   game.currentRound.phase = "seeCards";
-  await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
+  await triggerPusherEvent(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
     cards: userCards,
   });
   return NextResponse.json({ cards: userCards });
-}
-
-async function triggerPusherEvent(channel, event, data) {
-  await pusher.trigger(channel, event, data);
 }
 
 // Function to handle discarding a card
@@ -78,18 +85,20 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     const isBlue = blueCount > remainingCards.length / 2;
 
     if (!isBlue && game.HonestVetoEnabled) {
-      if (await handleHonestVeto(game)) {
+      if (await handleHonestVeto(game, lobbyid)) {
         return NextResponse.json({ message: "veto used" });
       }
     }
 
     if (isBlue && game.CorruptVetoEnabled) {
-      if (await handleCorruptVeto(game)) {
+      if (await handleCorruptVeto(game, lobbyid)) {
         return NextResponse.json({ message: "veto used" });
       }
     }
 
-    game.gameChat.push(isBlue ? "blue card enacted" : "red card enacted");
+    game.gameChat.push(
+      isBlue ? "honest evidence enacted" : "corrupt evidence enacted"
+    );
     game.boardState[isBlue ? "blues" : "reds"] += 1;
 
     await Promise.all([
@@ -142,12 +151,8 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     await transitionPhase(game, "Judge Picks Partner");
   } else {
     if (userid === associate.id.toString()) {
-      console.log("these are the associate user cards", userCards);
       associate.cards = remainingCards;
-      console.log("these are the associate remaining cards", remainingCards);
     } else {
-      console.log("these are the paralegal user cards", userCards);
-      console.log("these are the paralegal remaining cards", remainingCards);
       paralegal.cards = remainingCards;
     }
     game.discardPile.push(card);
@@ -155,7 +160,6 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
 
   if (associate.cards?.length === 2 && paralegal.cards?.length === 2) {
     partner.cards = [...associate.cards, ...paralegal.cards];
-    console.log("these are the partners cards according to db", partner.cards);
     await triggerPusherEvent(
       `gameUpdate-${lobbyid}-${partner.id?.toString()}`,
       "receivePartnerCards",
@@ -171,20 +175,27 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
 
 async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
   const peekedCards = game.currentRound.playerPeeking.cards;
+  console.log("these are the peeked cards", peekedCards);
 
   if (discardOption === "discardOne" && card) {
     const remainingCards = peekedCards.filter(
       (c, i) => i !== peekedCards.indexOf(card)
     );
     game.drawPile.unshift(...remainingCards);
+    console.log("this is the remaining card:", remainingCards);
+    console.log("this is the discarded card:", card);
+    console.log("this is the deck:", game.drawPile);
     game.discardPile.push(card);
+    console.log("this is the discardPile:", game.discardPile);
   } else if (discardOption === "discardNone") {
     game.drawPile.unshift(...peekedCards);
+    console.log("this is the deck if discardnone:", game.drawPile);
   }
 
-  await pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
+  await triggerPusherEvent(`gameUpdate-${lobbyid}`, "updateDeckCount", {
     cardsLeft: game.drawPile.length,
   });
+
   await clearRound(game);
   await transitionPhase(game, "Judge Picks Partner");
   return NextResponse.json({ message: "Peek and Discard completed" });
@@ -229,7 +240,7 @@ async function checkWinCondition(game, isBlue, lobbyid) {
       ? "honest team has won!"
       : "corrupt team has won!";
     game.gameChat.push(winningMessage);
-    await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     await transitionPhase(game, "game ended");
@@ -238,7 +249,7 @@ async function checkWinCondition(game, isBlue, lobbyid) {
   return false;
 }
 
-async function handleCorruptVeto(game) {
+async function handleCorruptVeto(game, lobbyid) {
   const partner = game.players.find((p) =>
     p.player._id.equals(game.currentRound.paralegal.id)
   );
@@ -255,15 +266,15 @@ async function handleCorruptVeto(game) {
     partner.role === "Evil"
   ) {
     game.gameChat.push("entire team is corrupt");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     game.gameChat.push("honest evidence automatically vetod");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     game.gameChat.push("corrupt team has won");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     await transitionPhase(game, "game ended");
@@ -272,7 +283,7 @@ async function handleCorruptVeto(game) {
   return false;
 }
 
-async function handleHonestVeto(game) {
+async function handleHonestVeto(game, lobbyid) {
   console.log("honest veto function runs");
 
   const partner = game.players.find((p) =>
@@ -295,24 +306,24 @@ async function handleHonestVeto(game) {
   ) {
     console.log("all players are good");
     game.gameChat.push("entire team is good");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     game.gameChat.push("corrupt evidence automatically vetod");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     console.log("this is the player length:", game.players.length);
     if (game.players.length == 6) {
       game.gameChat.push("honest team has won");
-      await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+      await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
         gamechat: game.gameChat,
       });
       await transitionPhase(game, "game ended");
       return true;
     } else {
       game.gameChat.push("Judge needs to pick a new team");
-      await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
+      await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
         gamechat: game.gameChat,
       });
       await clearRound(game);
