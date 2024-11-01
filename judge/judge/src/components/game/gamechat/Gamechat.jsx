@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation'
 const Gamechat = ({ lobbyid }) => {
   const pathname = usePathname();
   const isGamePath = pathname.startsWith('/game/');
-  const [gameMessages, setGameMessages] = useState(["waiting on players...","game can be started once there are between 6 and 13 players in lobby","if you want to be the Judge click the volunteer button"]);
+  const [gameMessages, setGameMessages] = useState(["Waiting on players...","game can be started once there are between 6 and 13 players in lobby","If you want to be the Judge click the volunteer button"]);
 
   const messagesEndRef = useRef(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
