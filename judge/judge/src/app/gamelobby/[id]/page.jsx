@@ -1,7 +1,7 @@
-import Deck from "@/components/game/deck/Deck";
-import BoardState from "@/components/game/boardState/BoardState"
-import Gamechat from "@/components/game/gamechat/Gamechat";
-import LobbyBody from "@/components/gamelobby/LobbyBody";
+import Deck from "@/components/gamelobby/deck/Deck";
+import BoardState from "@/components/gamelobby/boardState/BoardState"
+import GameChat from "@/components/gamelobby/gamechat/Gamechat";
+import PlayerList from "@/components/gamelobby/players/PlayerList";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
 
@@ -15,15 +15,15 @@ const GamePage = async (context) => {
         <div className={styles.all}> 
         <div className={styles.container}> 
           <div className={styles.leftpart}>
-            <LobbyBody lobbyid={id} session={session} />
+            <PlayerList lobbyid={id} session={session} />
           </div>
           <div className={styles.rightpart}>
             <div className={styles.section}>
-              <Deck lobbyid={id} session={session} />
-              <BoardState lobbyid={id} />
+              <Deck />
+              <BoardState />
             </div>
             <div className={styles.section}>
-              <Gamechat lobbyid={id} />
+              <GameChat/>
             </div>
           </div>
         </div>

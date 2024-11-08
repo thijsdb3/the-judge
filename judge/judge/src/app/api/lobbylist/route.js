@@ -1,16 +1,7 @@
 import { NextResponse } from "next/server";
-import Pusher from "pusher";
 import connectToDB from "@/lib/utils";
 import { GameLobby } from "@/lib/models";
-
-const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
-
-const pusher = new Pusher({
-  appId: PUSHER_APP_ID,
-  key: NEXT_PUBLIC_PUSHER_KEY,
-  secret: PUSHER_SECRET,
-  cluster: "eu",
-});
+import { triggerPusherEvent } from "@/lib/pusher";
 
 export async function POST(req) {
   try {
@@ -47,7 +38,7 @@ export async function POST(req) {
       "players.id"
     );
 
-    await pusher.trigger(`gameUpdate-${lobbyid}`, "userList", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "userList", {
       users: updatedLobby.players.map((player) => player.id.username),
     });
 

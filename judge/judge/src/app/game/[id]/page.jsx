@@ -1,23 +1,24 @@
-import Deck from "@/components/game/deck/Deck";
-import Players from "@/components/game/players/Players"
-import BoardState from "@/components/game/boardState/BoardState"
-import Gamechat from "@/components/game/gamechat/Gamechat";
+import StaticDeck from "@/components/game/deck/StaticDeck";
+import StaticPlayers from "@/components/game/players/StaticPlayers"
+import StaticBoardState from "@/components/game/boardState/StaticBoardState"
+import Gamechat from "@/components/game/gameChat/Gamechat";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
+
 const Game = async (context) => {
   const session = await auth()
   const id = context.params.id
   return (
-    <div classame = {styles.all}>
+    <div className = {styles.all}>
     {session ? ( 
       <div className = {styles.container }> 
        <div className = {styles.leftpart} >
-       <Players lobbyid = {id} session = {session} />
+       <StaticPlayers lobbyid = {id} session = {session} />
        </div>
        <div className = {styles.rightpart}>
         <div className ={styles.section}>
-       <Deck lobbyid = {id} session = {session}/>
-       <BoardState lobbyid = {id}/>
+       <StaticDeck lobbyid = {id} session = {session}/>
+       <StaticBoardState lobbyid = {id}/>
        </div>
        <div className ={styles.section}>
        <Gamechat lobbyid={id}/>

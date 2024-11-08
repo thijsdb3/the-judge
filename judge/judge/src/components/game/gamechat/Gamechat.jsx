@@ -13,7 +13,6 @@ const Gamechat = ({ lobbyid }) => {
   const messagesEndRef = useRef(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
 
-  // Fetch initial messages from the database on component mount
   useEffect(() => {
     if (isGamePath && lobbyid) {
       const fetchMessages = async () => {

@@ -1,4 +1,4 @@
-import { User , GameLobby, Game} from "./models";
+import { User , GameLobby} from "./models";
 import connectToDB from "./utils"
 
 

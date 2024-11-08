@@ -4,63 +4,21 @@ import styles from "./Deck.module.css";
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import Pusher from "pusher-js";
-import { usePathname } from 'next/navigation'
 
 
-const Deck = ({ lobbyid, session }) => {
-  const [userCards, setUserCards] = useState([]);
-  const [phase, setPhase] = useState('unstarted');
+const CardPhase = ({ lobbyid, session , data}) => {
+  const [userCards, setUserCards] = useState(data.cards);
+  const [phase, setPhase] = useState(data.phase);
   const [selectedCard, setSelectedCard] = useState(null);
-  const [cardsLeft, setCardsLeft] = useState(34);
-  const [playerPeeking, setPlayerPeeking] = useState(false);
-  const userid = session?.user.id;
-  const pathname = usePathname();
-  const isGamePath = pathname.startsWith('/game/');
-
-  useEffect(() => {
-    // Fetch current state from the database on component mount
-    if (!userid || !lobbyid) return; 
-    if(isGamePath){
-    const fetchCurrentState = async () => {
-      try {
-        const res = await fetch(`/api/game/gameround/getUserCards`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userid, lobbyid }),
-        });
-        
-        if (!res.ok) {
-          console.error('Failed to fetch user cards:', res.statusText);
-          return;
-        }
-    
-        const data = await res.json();
-        if (data.cards) {
-          setUserCards(data.cards);
-          setPhase(data.phase || 'unstarted');
-          setPlayerPeeking(data.playerPeeking)
-          setCardsLeft(data.cardsleft)
-  
-        }
-      } catch (error) {
-        console.error('Error parsing JSON response:', error);
-      }}
-      if (lobbyid && userid) {
-        fetchCurrentState();
-      }
-    }
-    }, [lobbyid,userid] );
+  const [playerPeeking, setPlayerPeeking] = useState(data.playerPeeking);
+  const userid = session?.user?.id
   
     useEffect(() => {
-  
-      if (session && isGamePath) {
-  
+    if(session){
         const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
           cluster: 'eu',
         });
-        const userid = session.user.id;
         const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
-        const deckinfochannel = pusher.subscribe(`gameUpdate-${lobbyid}`);
   
         channel.bind('pusher:subscription_error', (status) => {
           console.error('Pusher subscription error:', status);
@@ -84,17 +42,12 @@ const Deck = ({ lobbyid, session }) => {
           setPhase('Peek and Discard');
         });
   
-        deckinfochannel.bind('updateDeckCount', (message) => {
-          setCardsLeft(message.cardsLeft);
-        });
-  
+ 
         return () => {
           channel.unbind_all();
-          deckinfochannel.unbind_all();
           channel.unsubscribe();
-          deckinfochannel.unsubscribe();
         };
-      }
+    }
     }, [session, lobbyid]);
   
     // Function to fetch and see the cards when the user clicks a button
@@ -142,23 +95,6 @@ const Deck = ({ lobbyid, session }) => {
     };
 
   return (
-    <div className={styles.bigbox}>
-      <div className={styles.leftbox}>
-        <Image 
-          src="/images/cards.png" 
-          alt="Deck of Cards"
-          layout="responsive"  
-          width={100}          
-          height={150}         
-        />
-        <div className={styles.deckinfo}>
-          <p className={styles.deckinfop}>Cards left in deck:</p>
-          <div className={styles.smallbox}>
-            <span className={styles.bignumber}>{cardsLeft}</span>
-          </div>
-        </div>
-      </div>
-
       <div>
         {/* Show "See Cards" button when in the "seeCards" phase */}
         {phase === 'seeCards' && (
@@ -219,8 +155,7 @@ const Deck = ({ lobbyid, session }) => {
 )}
 
       </div>
-    </div>
   );
 };
 
-export default Deck;
+export default CardPhase;

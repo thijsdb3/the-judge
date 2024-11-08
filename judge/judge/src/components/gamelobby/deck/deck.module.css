@@ -1,0 +1,60 @@
+.bignumber {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.deckinfo {
+    display: flex;
+    color:black;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.deckinfop {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+.smallbox {
+    background-color: #333;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.bigbox {
+    width: 90%;
+    height: 95%;
+    display: flex;
+    justify-content: space-between;
+}
+.leftbox {
+    width: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: #f0f0f0;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+.cardContainer {
+    display:inline-flex; 
+    margin-right: 20px;    
+    flex-direction:row; 
+    position: relative; 
+  }
+  
+  .cardlayout {
+    cursor: pointer; 
+    width: 100px; 
+    height: auto;          
+  }
+  
+  .cardlayout:hover {
+   transform: scale(1.05); /* Optional: Add a scaling effect */
+    transition: background-color 0.3s ease, transform 0.2s ease;         
+  }
+  

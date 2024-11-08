@@ -1,17 +1,10 @@
 import connectToDB from "@/lib/utils";
 import { Game, GameLobby } from "@/lib/models";
-import { fisherYatesShuffle, assignRoles } from "@/lib/utils";
-import Pusher from "pusher";
+import { shuffle, assignRoles } from "@/lib/utils";
+import { triggerPusherEvent } from "@/lib/pusher";
 import { NextResponse } from "next/server";
 
-const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
 
-const pusher = new Pusher({
-  appId: PUSHER_APP_ID,
-  key: NEXT_PUBLIC_PUSHER_KEY,
-  secret: PUSHER_SECRET,
-  cluster: "eu",
-});
 
 const BLUE_CARDS_COUNT = 12;
 const RED_CARDS_COUNT = 22;
@@ -26,18 +19,17 @@ export async function POST(req) {
       throw new Error("Game lobby not found");
     }
 
-    const shuffledDrawPile = fisherYatesShuffle([
+    const shuffledDrawPile = shuffle([
       ...Array(BLUE_CARDS_COUNT).fill("blue"),
       ...Array(RED_CARDS_COUNT).fill("red"),
     ]);
-    const players = assignRoles(gameLobby.players);
-    console.log(players);
+    const players = shuffle(assignRoles(gameLobby.players));
+    const judge =  players.find((p) => p.role === "Judge").player
+
     const currentRound = {
-      judge: players.find((p) => p.role === "Judge").player,
       partner: { id: null, cards: [] },
       associate: { id: null, cards: [] },
       paralegal: { id: null, cards: [] },
-      playerPeeking: { id: null, cards: [] },
       phase: "Judge Picks Partner",
     };
 
@@ -53,6 +45,7 @@ export async function POST(req) {
       boardState: { reds: 0, blues: 0 },
       drawPile: shuffledDrawPile,
       discardPile: [],
+      judge,
       currentRound,
       previousTeam,
       gameChat: ["Welcome to the Game!"],
@@ -60,9 +53,9 @@ export async function POST(req) {
 
     await newGame.save();
 
-    await pusher.trigger(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
-
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
     return NextResponse.json({ status: 200 });
+    
   } catch (error) {
     console.error("Error during game initialization:", error);
     return NextResponse.json(

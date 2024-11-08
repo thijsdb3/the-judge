@@ -5,7 +5,6 @@ const connection = {};
 const connectToDB = async () => {
   try {
     if (connection.isConnected) {
-      //console.log("Using existing connection");
       return;
     }
     const db = await mongoose.connect(process.env.MONGO);
@@ -16,19 +15,18 @@ const connectToDB = async () => {
   }
 };
 
-export const fisherYatesShuffle = (array) => {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
+export const shuffle = (array) => {
+  for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    [array[i], array[j]] = [array[j], array[i]];
   }
-  return shuffled;
+  return array;
 };
 
 export const reshuffleDeck = (game) => {
   const newDeck = [...game.drawPile, ...game.discardPile];
   game.discardPile = [];
-  return fisherYatesShuffle(newDeck);
+  return shuffle(newDeck);
 };
 
 export const isNotTeamLocked = (game, selectedPlayer, playerCount) => {
@@ -56,14 +54,15 @@ export const isNotTeamLocked = (game, selectedPlayer, playerCount) => {
   );
 };
 
+
+
+// assigns roles to the players in game 
+// randomly selects the judge between players that volunteered if nobody volunteered than it randomly selects between all players
 export const assignRoles = (players) => {
-  const shuffledPlayers = fisherYatesShuffle(players);
-  const totalPlayers = shuffledPlayers.length;
+  const totalPlayers = players.length;
   const assignedRoles = [];
 
-  const volunteeredPlayers = shuffledPlayers.filter(
-    (player) => player.judgeFlag
-  );
+  const volunteeredPlayers = players.filter((player) => player.judgeFlag);
 
   // Assign Judge
   let judge;
@@ -72,14 +71,12 @@ export const assignRoles = (players) => {
     judge = volunteeredPlayers[judgeIndex];
   } else {
     const judgeIndex = Math.floor(Math.random() * totalPlayers);
-    judge = shuffledPlayers[judgeIndex];
+    judge = players[judgeIndex];
   }
   assignedRoles.push({ player: judge.id, role: "Judge" });
 
   // Prepare remaining players list excluding the judge
-  const remainingPlayers = shuffledPlayers.filter(
-    (player) => player.id !== judge.id
-  );
+  const remainingPlayers = players.filter((player) => player.id !== judge.id);
 
   let goodCount = 0,
     evilCount = 0,
@@ -87,14 +84,6 @@ export const assignRoles = (players) => {
 
   // Set counts based on totalPlayers
   switch (totalPlayers) {
-    case 4:
-      goodCount = 2;
-      evilCount = 1;
-      break;
-    case 5:
-      goodCount = 2;
-      evilCount = 2;
-      break;
     case 6:
       goodCount = 3;
       evilCount = 2;
@@ -152,8 +141,9 @@ export const assignRoles = (players) => {
     assignedRoles.push({ player: remainingPlayers[i].id, role: "Good" });
   }
 
-
   return assignedRoles;
 };
+
+
 
 export default connectToDB;

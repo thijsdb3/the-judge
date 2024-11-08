@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
       minlength: 3,
-      maxlength: 20,
+      maxlength: 22,
     },
 
     hashedPassword: {
@@ -73,11 +73,12 @@ const gameSchema = new mongoose.Schema({
       enum: ["blue", "red"],
     },
   ],
+
+  judge: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
   currentRound: {
-    judge: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
     partner: {
       id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -99,10 +100,6 @@ const gameSchema = new mongoose.Schema({
       },
       cards: [{}],
     },
-    playerPeeking: {
-      id: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-      cards: [{}],
-    },
     phase: {
       type: String,
       enum: [
@@ -120,6 +117,12 @@ const gameSchema = new mongoose.Schema({
       ],
     },
   },
+
+  playerPeeking: {
+    id: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    cards: [{}],
+  },
+
   playerInvestigating: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",

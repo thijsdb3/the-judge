@@ -1,17 +1,10 @@
 import { NextResponse } from "next/server";
 import connectToDB from "@/lib/utils";
 import { Game } from "@/lib/models";
-import Pusher from "pusher";
-
-// Initialize Pusher
-const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
-
-const pusher = new Pusher({
-  appId: PUSHER_APP_ID,
-  key: NEXT_PUBLIC_PUSHER_KEY,
-  secret: PUSHER_SECRET,
-  cluster: "eu",
-});
+import { transitionPhase, clearRound } from "@/lib/gameround";
+import { triggerPusherEvent } from "@/lib/pusher";
+import { handlePeekAndDiscard } from "@/lib/powers";
+import { handleCorruptVeto, handleHonestVeto } from "@/lib/veto";
 
 export async function POST(request) {
   const { lobbyid, userid, action, card, discardOption } = await request.json();
@@ -52,14 +45,10 @@ export async function POST(request) {
 // Function to handle seeing cards
 async function handleSeeCards(game, userCards, lobbyid, userid) {
   game.currentRound.phase = "seeCards";
-  await pusher.trigger(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
+  await triggerPusherEvent(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
     cards: userCards,
   });
   return NextResponse.json({ cards: userCards });
-}
-
-async function triggerPusherEvent(channel, event, data) {
-  await pusher.trigger(channel, event, data);
 }
 
 // Function to handle discarding a card
@@ -127,7 +116,7 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
     if (!isBlue && game.boardState.reds === 4) {
       game.HonestVetoEnabled = true;
       console.log("honest veto is:", game.HonestVetoEnabled);
-      if (playercount >= 9) {
+      if (playercount >= 7) {
         await clearRound(game);
         await transitionPhase(game, "Judge picks reverse investigator");
         return NextResponse.json({
@@ -171,57 +160,6 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
   return NextResponse.json({ message: "Card discarded successfully" });
 }
 
-async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
-  const peekedCards = game.currentRound.playerPeeking.cards;
-
-  if (discardOption === "discardOne" && card) {
-    const remainingCards = peekedCards.filter(
-      (c, i) => i !== peekedCards.indexOf(card)
-    );
-    game.drawPile.unshift(...remainingCards);
-    game.discardPile.push(card);
-  } else if (discardOption === "discardNone") {
-    game.drawPile.unshift(...peekedCards);
-  }
-
-  await pusher.trigger(`gameUpdate-${lobbyid}`, "updateDeckCount", {
-    cardsLeft: game.drawPile.length,
-  });
-  await clearRound(game);
-  await transitionPhase(game, "Judge Picks Partner");
-  return NextResponse.json({ message: "Peek and Discard completed" });
-}
-
-// Function to handle phase transitions
-async function transitionPhase(game, newPhase) {
-  game.currentRound.phase = newPhase;
-  await game.save();
-}
-
-// function to clear the round to set up for the next
-async function clearRound(game) {
-  if (game.currentRound.partner.id) {
-    game.previousTeam.partner = game.currentRound.partner.id;
-  }
-
-  if (game.currentRound.associate.id) {
-    game.previousTeam.associate = game.currentRound.associate.id;
-  }
-
-  if (game.currentRound.paralegal.id) {
-    game.previousTeam.paralegal = game.currentRound.paralegal.id;
-  }
-
-  game.currentRound.partner.id = null;
-  game.currentRound.associate.id = null;
-  game.currentRound.paralegal.id = null;
-  game.currentRound.partner.cards = null;
-  game.currentRound.associate.cards = null;
-  game.currentRound.paralegal.cards = null;
-
-  await game.save();
-}
-
 async function checkWinCondition(game, isBlue, lobbyid) {
   if (
     (isBlue && game.boardState.blues === 5) ||
@@ -231,96 +169,11 @@ async function checkWinCondition(game, isBlue, lobbyid) {
       ? "honest team has won!"
       : "corrupt team has won!";
     game.gameChat.push(winningMessage);
-    await pusher.trigger(`gameUpdate-${lobbyid}`, "gamechat", {
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
       gamechat: game.gameChat,
     });
     await transitionPhase(game, "game ended");
     return true;
-  }
-  return false;
-}
-
-async function handleCorruptVeto(game) {
-  const partner = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.paralegal.id)
-  );
-  const associate = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.associate.id)
-  );
-
-  const paralegal = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.partner.id)
-  );
-  if (
-    paralegal.role === "Evil" &&
-    associate.role === "Evil" &&
-    partner.role === "Evil"
-  ) {
-    game.gameChat.push("entire team is corrupt");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-      gamechat: game.gameChat,
-    });
-    game.gameChat.push("honest evidence automatically vetod");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-      gamechat: game.gameChat,
-    });
-    game.gameChat.push("corrupt team has won");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-      gamechat: game.gameChat,
-    });
-    await transitionPhase(game, "game ended");
-    return true;
-  }
-  return false;
-}
-
-async function handleHonestVeto(game) {
-  console.log("honest veto function runs");
-
-  const partner = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.paralegal.id)
-  );
-  const associate = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.associate.id)
-  );
-
-  const paralegal = game.players.find((p) =>
-    p.player._id.equals(game.currentRound.partner.id)
-  );
-  console.log("this is the partners role", partner.role);
-  console.log("this is the associate role", associate.role);
-  console.log("this is the paralegals role", paralegal.role);
-  if (
-    paralegal.role === "Good" &&
-    associate.role === "Good" &&
-    partner.role === "Good"
-  ) {
-    console.log("all players are good");
-    game.gameChat.push("entire team is good");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-      gamechat: game.gameChat,
-    });
-    game.gameChat.push("corrupt evidence automatically vetod");
-    await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-      gamechat: game.gameChat,
-    });
-    console.log("this is the player length:", game.players.length);
-    if (game.players.length == 6) {
-      game.gameChat.push("honest team has won");
-      await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-        gamechat: game.gameChat,
-      });
-      await transitionPhase(game, "game ended");
-      return true;
-    } else {
-      game.gameChat.push("Judge needs to pick a new team");
-      await pusher.trigger(`gameUpdate-${game.gameid}`, "gamechat", {
-        gamechat: game.gameChat,
-      });
-      await clearRound(game);
-      await transitionPhase(game, "Judge Picks Partner");
-      return true;
-    }
   }
   return false;
 }

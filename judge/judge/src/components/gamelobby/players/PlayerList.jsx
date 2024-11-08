@@ -3,16 +3,16 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
 import Image from "next/image";
-import styles from "./LobbyBoddy.module.css";
+import styles from "./PlayerList.module.css";
 
-const LobbyBody = ({ session, lobbyid }) => {
+const PlayerList = ({ session, lobbyid }) => {
   const [players, setPlayers] = useState([]);
   const [volunteered, setVolunteered] = useState(false); // Track if the button has been clicked
   const router = useRouter();
   
   const updatePlayerStatus = async (action) => {
     try {
-      await fetch('/api/playerlist', {
+      await fetch('/api/lobbylist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userid: session?.user.id, lobbyid, action }),
@@ -111,4 +111,4 @@ const LobbyBody = ({ session, lobbyid }) => {
   );
 };
 
-export default LobbyBody;
+export default PlayerList;
