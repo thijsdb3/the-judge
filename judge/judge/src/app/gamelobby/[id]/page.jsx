@@ -1,6 +1,6 @@
 import Deck from "@/components/gamelobby/deck/Deck";
 import BoardState from "@/components/gamelobby/boardState/BoardState"
-import Gamechat from "@/components/gamelobby/gamechat/GameChat";
+import Gamechat from "@/components/gamelobby/gamechat/Gamechat";
 import PlayerList from "@/components/gamelobby/players/PlayerList";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
