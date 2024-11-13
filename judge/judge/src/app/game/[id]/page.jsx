@@ -1,7 +1,7 @@
 import StaticDeck from "@/components/game/deck/StaticDeck";
 import StaticPlayers from "@/components/game/players/StaticPlayers"
 import StaticBoardState from "@/components/game/boardState/StaticBoardState"
-import Gamechat from "@/components/game/gameChat/GameChat";
+import Gamechat from "@/components/game/gameChat/Gamechat";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
 
