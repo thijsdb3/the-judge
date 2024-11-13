@@ -5,7 +5,7 @@ import styles from "./gamechat.module.css";
 import Pusher from "pusher-js";
 import { usePathname } from 'next/navigation'
 
-const Gamechat = ({ lobbyid }) => {
+const GameChat = ({ lobbyid }) => {
   const pathname = usePathname();
   const isGamePath = pathname.startsWith('/game/');
   const [gameMessages, setGameMessages] = useState(["Waiting on players...","game can be started once there are between 6 and 13 players in lobby","If you want to be the Judge click the volunteer button"]);
@@ -93,4 +93,4 @@ const Gamechat = ({ lobbyid }) => {
   );
 };
 
-export default Gamechat;
+export default GameChat;
