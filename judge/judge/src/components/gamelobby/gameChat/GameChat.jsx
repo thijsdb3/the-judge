@@ -1,7 +1,7 @@
 
 import styles from "./gamechat.module.css";
 
-const GameChat = () => {
+const Gamechat = () => {
   const gameMessages = ["Waiting on players...","game can be started once there are between 6 and 13 players in lobby","If you want to be the Judge click the volunteer button"];
 
   return (
@@ -22,4 +22,4 @@ const GameChat = () => {
   );
 };
 
-export default GameChat;
+export default Gamechat;
