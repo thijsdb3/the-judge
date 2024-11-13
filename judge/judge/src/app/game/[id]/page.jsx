@@ -1,7 +1,7 @@
 import StaticDeck from "@/components/game/deck/StaticDeck";
 import StaticPlayers from "@/components/game/players/StaticPlayers"
 import StaticBoardState from "@/components/game/boardState/StaticBoardState"
-import GameChat from "@/components/game/gameChat/Gamechat";
+import Gamechat from "@/components/game/gameChat/Gamechat";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
 
@@ -21,7 +21,7 @@ const Game = async (context) => {
        <StaticBoardState lobbyid = {id}/>
        </div>
        <div className ={styles.section}>
-       <GameChat lobbyid={id}/>
+       <Gamechat lobbyid={id}/>
        </div>
        </div>
        </div>
