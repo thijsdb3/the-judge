@@ -21,7 +21,7 @@ const Game = async (context) => {
        <StaticBoardState lobbyid = {id}/>
        </div>
        <div className ={styles.section}>
-       <Gamechat lobbyid={id}/>
+       <GameChat lobbyid={id}/>
        </div>
        </div>
        </div>
