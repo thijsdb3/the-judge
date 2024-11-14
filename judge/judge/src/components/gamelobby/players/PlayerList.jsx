@@ -7,23 +7,25 @@ import styles from "./PlayerList.module.css";
 
 const PlayerList = ({ session, lobbyid }) => {
   const [players, setPlayers] = useState([]);
-  const [volunteered, setVolunteered] = useState(false); // Track if the button has been clicked
+  const [volunteered, setVolunteered] = useState(false);
   const router = useRouter();
-  
+
   const updatePlayerStatus = async (action) => {
     try {
-      await fetch('/api/lobbylist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userid: session?.user.id, lobbyid, action }),
-      });
+      if (session?.user.id && lobbyid) {
+        await fetch('/api/lobbylist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userid: session.user.id, lobbyid, action }),
+        });
+      }
     } catch (error) {
       console.error(`Error ${action}ing game:`, error);
     }
   };
 
   useEffect(() => {
-    if (!session) return;
+    if (!session || !lobbyid) return;
 
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: 'eu' });
     const channel = pusher.subscribe(`gameUpdate-${lobbyid}`);
@@ -64,12 +66,14 @@ const PlayerList = ({ session, lobbyid }) => {
 
   const handleStartGame = useCallback(async () => {
     try {
-      const response = await fetch('/api/game/initialisation', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lobbyid }),
-      });
-      if (!response.ok) throw new Error('Failed to start the game');
+      if (lobbyid) {
+        const response = await fetch('/api/game/initialisation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lobbyid }),
+        });
+        if (!response.ok) throw new Error('Failed to start the game');
+      }
     } catch (error) {
       console.error('Error initializing game:', error);
     }
@@ -97,7 +101,11 @@ const PlayerList = ({ session, lobbyid }) => {
         ))}
       </ul>
       <div className={styles.buttons}>
-        <button className={styles.button} onClick={handleStartGame} disabled={players.length < 6 || players.length > 13}>
+        <button
+          className={styles.button}
+          onClick={handleStartGame}
+          disabled={players.length < 6 || players.length > 13}
+        >
           Start Game
         </button>
         <button
