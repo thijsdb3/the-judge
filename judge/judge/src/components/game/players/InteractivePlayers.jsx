@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, memo } from "react";
 import Pusher from "pusher-js";
 import { handlePick } from "@/lib/gameround";
+import Image from "next/image";
 import styles from "./Players.module.css";
 
 const InteractivePlayers = ({ players, lobbyid, session }) => {
