@@ -50,7 +50,7 @@ const InteractivePlayers =  ({ players, lobbyid, session }) => {
       channel.unsubscribe();
       pusher.disconnect();
     };
-  }, []);
+  }, [lobbyid,userid]);
 
   const getPlayerStyle = useCallback((playerRole, playerUsername) => {
     const { playerBeingInvestigated, playerInvestigating, playerReverseInvestigating, playerBeingReverseInvestigated } = investigationState;
