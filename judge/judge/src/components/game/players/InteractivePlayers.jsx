@@ -1,18 +1,13 @@
 "use client";
-import { useState, useEffect, useCallback,memo } from 'react';
+import { useState, useEffect, useCallback, memo } from "react";
 import Pusher from "pusher-js";
-import { handlePick } from '@/lib/gameround';
+import { handlePick } from "@/lib/gameround";
 import styles from "./Players.module.css";
 
-
-const InteractivePlayers =  ({ players, lobbyid, session }) => {
-
-  if (!players || !session) {
-    return <div>Loading...</div>; 
-  }
+const InteractivePlayers = ({ players, lobbyid, session }) => {
   const username = session?.user.username;
   const userid = session?.user.id;
-  const currentPlayer = players?.find(player => player.username === username);
+  const currentPlayer = players?.find((player) => player.username === username);
 
   const [investigationState, setInvestigationState] = useState({
     playerInvestigating: null,
@@ -22,11 +17,13 @@ const InteractivePlayers =  ({ players, lobbyid, session }) => {
   });
 
   useEffect(() => {
+    if (!lobbyid || !userid) return;
+
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: "eu" });
     const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
-    
+
     const handleInvestigation = (data) => {
-      setInvestigationState(prevState => ({
+      setInvestigationState((prevState) => ({
         ...prevState,
         playerInvestigating: data.playerInvestigating,
         playerBeingInvestigated: data.playerBeingInvestigated,
@@ -34,7 +31,7 @@ const InteractivePlayers =  ({ players, lobbyid, session }) => {
     };
 
     const handleReverseInvestigation = (data) => {
-      setInvestigationState(prevState => ({
+      setInvestigationState((prevState) => ({
         ...prevState,
         playerReverseInvestigating: data.playerReverseInvestigating,
         playerBeingReverseInvestigated: data.playerBeingReverseInvestigated,
@@ -50,39 +47,46 @@ const InteractivePlayers =  ({ players, lobbyid, session }) => {
       channel.unsubscribe();
       pusher.disconnect();
     };
-  }, [lobbyid,userid]);
+  }, [lobbyid, userid]);
 
-  const getPlayerStyle = useCallback((playerRole, playerUsername) => {
-    const { playerBeingInvestigated, playerInvestigating, playerReverseInvestigating, playerBeingReverseInvestigated } = investigationState;
+  const getPlayerStyle = useCallback(
+    (playerRole, playerUsername) => {
+      const { playerBeingInvestigated, playerInvestigating, playerReverseInvestigating, playerBeingReverseInvestigated } = investigationState;
 
-    if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
-      return { color: playerRole === "Good" ? 'blue' : 'red' };
-    }
-    if (playerUsername === playerReverseInvestigating && playerBeingReverseInvestigated === username) {
-      return { color: playerRole === "Good" ? 'blue' : 'red' };
-    }
+      if (playerBeingInvestigated === playerUsername && playerInvestigating === username) {
+        return { color: playerRole === "Good" ? "blue" : "red" };
+      }
+      if (playerUsername === playerReverseInvestigating && playerBeingReverseInvestigated === username) {
+        return { color: playerRole === "Good" ? "blue" : "red" };
+      }
 
-    if (currentPlayer.role === "Evil" && playerRole === "Evil") return { color: 'red' };
-    if (currentPlayer.role === "Evil" && playerRole === "Good") return { color: 'black' };
-    if (currentPlayer.role === "Blindman" && playerUsername === username) return { color: '#8B0000' };
-    if (currentPlayer.role === "Good" && playerUsername === username) return { color: 'blue' };
-    if (currentPlayer.role === "Evil" && playerRole === "Blindman") return { color: '#8B0000' };
+      if (currentPlayer?.role === "Evil" && playerRole === "Evil") return { color: "red" };
+      if (currentPlayer?.role === "Evil" && playerRole === "Good") return { color: "black" };
+      if (currentPlayer?.role === "Blindman" && playerUsername === username) return { color: "#8B0000" };
+      if (currentPlayer?.role === "Good" && playerUsername === username) return { color: "blue" };
+      if (currentPlayer?.role === "Evil" && playerRole === "Blindman") return { color: "#8B0000" };
 
-    return { color: 'black' };
-  },[currentPlayer.role,investigationState]);
+      return { color: "black" };
+    },
+    [currentPlayer?.role, investigationState, username]
+  );
+
+  if (!players || !session) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
-      <h1 className = {styles.title}> Players in Game</h1>
+      <h1 className={styles.title}>Players in Game</h1>
       <ul className={styles.playerlist}>
-        {players?.map((player, index) => (
+        {players.map((player, index) => (
           <li
             className={`${styles.playerlistelement} ${styles.myTurn}`}
             key={index}
             style={getPlayerStyle(player.role, player.username)}
             onClick={() => handlePick(player, lobbyid, username)}
           >
-            <img
+            <Image
               src={player.role === "Judge" ? "/images/judge-icon.png" : "/images/player.png"}
               alt="Player Avatar"
               width={30}
