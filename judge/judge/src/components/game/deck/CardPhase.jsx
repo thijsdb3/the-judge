@@ -48,7 +48,7 @@ const CardPhase = ({ lobbyid, session , data}) => {
           channel.unsubscribe();
         };
     }
-    }, [session, lobbyid]);
+    }, [session, lobbyid ,userid]);
   
     // Function to fetch and see the cards when the user clicks a button
     const handleSeeCardsClick = async () => {

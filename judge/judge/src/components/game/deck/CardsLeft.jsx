@@ -20,7 +20,7 @@ const CardsLeft = ({CurrentCardsLeft,lobbyid}) => {
         deckinfo.unbind_all();
         deckinfo.unsubscribe();
       };
-    },[])
+    },[lobbyid])
 
     return(
         <span className={styles.bignumber}  > {cardsLeft} </span>

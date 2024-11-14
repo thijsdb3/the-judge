@@ -10,19 +10,19 @@ const PlayerList = ({ session, lobbyid }) => {
   const [volunteered, setVolunteered] = useState(false);
   const router = useRouter();
 
-  const updatePlayerStatus = async (action) => {
-    try {
-      if (session?.user.id && lobbyid) {
+  const updatePlayerStatus = useCallback(async (action) => {
+    if (session?.user.id && lobbyid) {
+      try {
         await fetch('/api/lobbylist', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ userid: session.user.id, lobbyid, action }),
         });
+      } catch (error) {
+        console.error(`Error ${action}ing game:`, error);
       }
-    } catch (error) {
-      console.error(`Error ${action}ing game:`, error);
     }
-  };
+  }, [session?.user.id, lobbyid]);
 
   useEffect(() => {
     if (!session || !lobbyid) return;
@@ -37,12 +37,9 @@ const PlayerList = ({ session, lobbyid }) => {
     channel.bind('pusher:subscription_succeeded', () => updatePlayerStatus('join'));
 
     const debouncedUpdatePlayers = (newPlayers) => {
-      setPlayers((prevPlayers) => {
-        if (JSON.stringify(prevPlayers) !== JSON.stringify(newPlayers)) {
-          return newPlayers;
-        }
-        return prevPlayers;
-      });
+      setPlayers((prevPlayers) => (
+        JSON.stringify(prevPlayers) !== JSON.stringify(newPlayers) ? newPlayers : prevPlayers
+      ));
     };
 
     channel.bind('userList', (message) => {
@@ -62,20 +59,20 @@ const PlayerList = ({ session, lobbyid }) => {
       channel.unbind_all();
       channel.unsubscribe();
     };
-  }, [session, lobbyid, router]);
+  }, [session, lobbyid, router, updatePlayerStatus]);
 
   const handleStartGame = useCallback(async () => {
-    try {
-      if (lobbyid) {
+    if (lobbyid) {
+      try {
         const response = await fetch('/api/game/initialisation', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ lobbyid }),
         });
         if (!response.ok) throw new Error('Failed to start the game');
+      } catch (error) {
+        console.error('Error initializing game:', error);
       }
-    } catch (error) {
-      console.error('Error initializing game:', error);
     }
   }, [lobbyid]);
 
