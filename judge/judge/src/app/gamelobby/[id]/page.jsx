@@ -1,6 +1,6 @@
 import Deck from "@/components/gamelobby/deck/Deck";
 import BoardState from "@/components/gamelobby/boardState/BoardState"
-import Gamechat from "@/components/gamelobby/gamechat/Gamechat";
+import GameChat from "@/components/gamelobby/gameChat/GameChat";
 import PlayerList from "@/components/gamelobby/players/PlayerList";
 import styles from "./page.module.css"
 import { auth } from "@/lib/auth";
@@ -23,7 +23,7 @@ const GamePage = async (context) => {
               <BoardState />
             </div>
             <div className={styles.section}>
-              <Gamechat/>
+              <GameChat/>
             </div>
           </div>
         </div>
