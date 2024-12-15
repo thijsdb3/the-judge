@@ -10,7 +10,7 @@ const pusher = new Pusher({
   appId: PUSHER_APP_ID,
   key: NEXT_PUBLIC_PUSHER_KEY,
   secret: PUSHER_SECRET,
-  cluster: "eu",
+  cluster: "mt1",
 });
 
 async function triggerPusherEvent(channel, event, data) {

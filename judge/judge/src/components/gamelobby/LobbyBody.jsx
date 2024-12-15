@@ -25,7 +25,7 @@ const LobbyBody = ({ session, lobbyid }) => {
   useEffect(() => {
     if (!session) return;
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: 'eu' });
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: 'mt1' });
     const channel = pusher.subscribe(`gameUpdate-${lobbyid}`);
 
     channel.bind('pusher:subscription_error', (status) => {

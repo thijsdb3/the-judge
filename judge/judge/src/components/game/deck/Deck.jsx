@@ -56,7 +56,7 @@ const Deck = ({ lobbyid, session }) => {
       if (session && isGamePath) {
   
         const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-          cluster: 'eu',
+          cluster: 'mt1',
         });
         const userid = session.user.id;
         const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);

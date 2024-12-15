@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import connectToDB from "@/lib/utils";
 import { Game } from "@/lib/models";
 import Pusher from "pusher";
-
+import { fisherYatesShuffle } from "@/lib/utils";
 // Initialize Pusher
 const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
 
@@ -10,7 +10,7 @@ const pusher = new Pusher({
   appId: PUSHER_APP_ID,
   key: NEXT_PUBLIC_PUSHER_KEY,
   secret: PUSHER_SECRET,
-  cluster: "eu",
+  cluster: "mt1",
 });
 
 async function triggerPusherEvent(channel, event, data) {
@@ -159,7 +159,10 @@ async function handleDiscardCard(game, userid, userCards, card, lobbyid) {
   }
 
   if (associate.cards?.length === 2 && paralegal.cards?.length === 2) {
-    partner.cards = [...associate.cards, ...paralegal.cards];
+    partner.cards = fisherYatesShuffle([
+      ...associate.cards,
+      ...paralegal.cards,
+    ]);
     await triggerPusherEvent(
       `gameUpdate-${lobbyid}-${partner.id?.toString()}`,
       "receivePartnerCards",

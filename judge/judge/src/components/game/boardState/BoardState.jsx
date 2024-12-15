@@ -45,7 +45,7 @@ const BoardState = ({ lobbyid }) => {
     useEffect(() => {
         if(isGamePath){
         const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
-          cluster: 'eu',
+          cluster: 'mt1',
         });
         const channel = pusher.subscribe(`gameUpdate-${lobbyid}`);
   

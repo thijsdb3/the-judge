@@ -21,7 +21,7 @@ const Players = ({ lobbyid, session }) => {
   const userid = session?.user.id;
 
   useEffect(() => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: "eu" });
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, { cluster: "mt1" });
     const channel = pusher.subscribe(`gameUpdate-${lobbyid}-${userid}`);
 
     const handleInvestigation = (data) => {

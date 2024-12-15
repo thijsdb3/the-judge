@@ -10,7 +10,7 @@ const LoginForm=()=>{
     return(
         <form className = {styles.form} action = {formAction}>
                 <input type  ="text " placeholder ="username" name = "username"/> 
-                <input type  ="password " placeholder ="password" name = "password"/>
+                <input type  ="password" placeholder ="password" name = "password"/>
                 <button> Login </button>
                 {state?.error}
                 <Link href = "/signup"> { "don't have an account?"} <b>Sign Up</b></Link>
