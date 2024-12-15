@@ -99,17 +99,18 @@ const PlayerList = ({ session, lobbyid }) => {
       </ul>
       <div className={styles.buttons}>
         <button
-          className={styles.button}
+          className={`${styles.button} ${styles.unclicked}`}
           onClick={handleStartGame}
-          disabled={players.length < 6 || players.length > 13}
+          disabled={players.length < 4 || players.length > 13}
         >
           Start Game
         </button>
         <button
-          className={`${styles.button} ${volunteered ? styles.clicked : ""}`}
+          className={`${styles.button} ${volunteered ? styles.clicked : styles.unclicked}`}
           onClick={handleVolunteerClick}
+          disabled={volunteered}
         >
-          Volunteer to be the Judge
+           {volunteered ? "You have volunteered to be the Judge" : "Volunteer to be the Judge"}
         </button>
       </div>
     </div>

@@ -1,26 +1,28 @@
-import {transitionPhase,clearRound} from "./gameround"
-import { triggerPusherEvent } from "./pusher";
-
-export const  judgePicksInvestigator = async (par)=> {
+import { transitionPhase, clearRound } from "./gameround";
+import { triggerPusherEvent,updateGameUI } from "./pusher";
+import { setPlayerTurn } from "./gameround";
+import { NextResponse } from "next/server";
+export const judgePicksInvestigator = async (par) => {
   if (
-    par.playerClickingId.equals(par.game.judge) &&
+    par.playerClickingId.equals(par.judge) &&
     par.game.playerInvestigating == null
   ) {
     par.game.playerInvestigating = par.selectedPlayerId;
     par.game.gameChat.push(
       `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to investigate`
     );
+    par.game.banner = `${par.selectedPlayerUsername} is choosing who they want to investigate`;
+    par.game.unpickablePlayers = [];
 
-    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+    await updateGameUI(par.game, par.lobbyid);
+    await setPlayerTurn(par.game, par.selectedPlayerId, par.playerClickingId);
     par.game.currentRound.phase = "investigation";
   }
-}
+};
 
-export const  judgePicksReverseInvestigator =async (par) =>{
+export const judgePicksReverseInvestigator = async (par) => {
   if (
-    par.playerClickingId.equals(par.game.judge) &&
+    par.playerClickingId.equals(par.judge) &&
     par.game.playerReverseInvestigating == null
   ) {
     par.game.playerReverseInvestigating = par.selectedPlayerId;
@@ -28,14 +30,15 @@ export const  judgePicksReverseInvestigator =async (par) =>{
       `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to reverse investigate`
     );
 
-    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
+    par.game.banner = `${par.selectedPlayerUsername} is choosing who they want to reverse investigate`;
+    par.game.unpickablePlayers = [];
+    await updateGameUI(par.game, par.lobbyid);
+    await setPlayerTurn(par.game, par.selectedPlayerId, par.playerClickingId);
     par.game.currentRound.phase = "reverse investigation";
   }
-}
+};
 
-export const  handleInvestigation = async(par)  => {
+export const handleInvestigation = async (par) => {
   if (
     par.playerClickingId.equals(par.game.playerInvestigating) &&
     par.game.playerBeingInvestigated == null
@@ -64,14 +67,34 @@ export const  handleInvestigation = async(par)  => {
           playerBeingInvestigated: par.selectedPlayerUsername,
         }
       );
+
+      par.game.players.forEach((p) => {
+        if (p.player._id.equals(par.playerClickingId)) {
+          p.isOnTurn = false;
+        }
+        if (p.player._id.equals(par.judge)) {
+          p.isOnTurn = true;
+        }
+      });
+      triggerPusherEvent(`gameUpdate-${par.lobbyid}-${par.judge}`, "myTurn", {
+        turn: true,
+      });
+
+      triggerPusherEvent(
+        `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
+        "myTurn",
+        { turn: false }
+      );
     } else {
       console.error("Player data could not be found for investigation.");
     }
   }
-  par.game.currentRound.phase = "Judge Picks Partner";
-}
+  await clearRound(par.game);
+  await transitionPhase(par.game, "Judge Picks Partner");
+  return NextResponse.json({ message: "Investigation completed" });
+};
 
-export const   handleReverseInvestigation = async(par)  => {
+export const handleReverseInvestigation = async (par) => {
   if (
     par.playerClickingId.equals(par.game.playerReverseInvestigating) &&
     par.game.playerBeingReverseInvestigated == null
@@ -100,18 +123,36 @@ export const   handleReverseInvestigation = async(par)  => {
           playerBeingReverseInvestigated: par.selectedPlayerUsername,
         }
       );
+      par.game.players.forEach((player) => {
+        if (player.player._id.equals(par.playerClickingId)) {
+          player.isOnTurn = false;
+        }
+        if (player.player._id.equals(par.judge)) {
+          player.isOnTurn = true;
+        }
+      });
+      triggerPusherEvent(`gameUpdate-${par.lobbyid}-${par.judge}`, "myTurn", {
+        turn: true,
+      });
+      triggerPusherEvent(
+        `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
+        "myTurn",
+        { turn: false }
+      );
     } else {
       console.error(
         "Player data could not be found for reverse investigation."
       );
     }
   }
-  par.game.currentRound.phase = "Judge Picks Partner";
-}
+  await clearRound(par.game);
+  await transitionPhase(par.game, "Judge Picks Partner");
+  return NextResponse.json({ message: "Reverse Investigation completed" });
+};
 
-export const  handlePeekAndDiscardPick = async (par) => {
+export const handlePeekAndDiscardPick = async (par) => {
   if (
-    par.playerClickingId.equals(par.game.judge) &&
+    par.playerClickingId.equals(par.judge) &&
     par.game.playerPeeking.id == null
   ) {
     par.game.playerPeeking = { id: par.selectedPlayerId, cards: [] };
@@ -123,21 +164,28 @@ export const  handlePeekAndDiscardPick = async (par) => {
       gamechat: par.game.gameChat,
     });
     par.game.playerPeeking.cards = par.game.drawPile.splice(0, 2);
-
+    par.game.banner = `${par.selectedPlayerUsername} is choosing if they want to discard a card`;
+   
+     await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "banner", {
+      banner: par.game.banner,
+    });
     await triggerPusherEvent(
       `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
       "peekAndDiscardPhaseStarted",
       { cards: par.game.playerPeeking.cards }
     );
-    await triggerPusherEvent(
-      `gameUpdate-${par.game.gameid}`,
-      "updateDeckCount",
-      { cardsLeft: par.game.drawPile.length }
-    );
+    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "updateDeckCount", {
+      cardsLeft: par.game.drawPile.length,
+    });
   }
-}
+};
 
-export const  handlePeekAndDiscard = async (game, discardOption, card, lobbyid)  =>{
+export const handlePeekAndDiscard = async (
+  game,
+  discardOption,
+  card,
+  lobbyid
+) => {
   const peekedCards = game.playerPeeking.cards;
 
   if (discardOption === "discardOne" && card) {
@@ -153,7 +201,10 @@ export const  handlePeekAndDiscard = async (game, discardOption, card, lobbyid) 
   await triggerPusherEvent(`gameUpdate-${lobbyid}`, "updateDeckCount", {
     cardsLeft: game.drawPile.length,
   });
+  const judge = await game.players.find((p) => p.role == "Judge");
+  judge.isOnTurn = true;
+
   await clearRound(game);
   await transitionPhase(game, "Judge Picks Partner");
   return NextResponse.json({ message: "Peek and Discard completed" });
-}
+};

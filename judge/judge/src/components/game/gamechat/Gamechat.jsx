@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import styles from "./gamechat.module.css";
 import Pusher from "pusher-js";
 import { usePathname } from 'next/navigation'
-
+import { retrySubscribe } from "@/lib/pusher";
 const GameChat = ({ lobbyid }) => {
   const pathname = usePathname();
   const isGamePath = pathname.startsWith('/game/');
@@ -40,20 +40,26 @@ const GameChat = ({ lobbyid }) => {
       const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: "eu",
       });
+      const setupPusher = async () => {
+        try {
+          const channel = await retrySubscribe(`gameUpdate-${lobbyid}`, pusher);
 
-      const channel = pusher.subscribe(`gameUpdate-${lobbyid}`);
+          channel.bind("gamechat", (data) => {
+            setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);
+          });
 
-      channel.bind("pusher:subscription_error", (status) => {
-        console.error("Pusher subscription error:", status);
-      });
+          channel.bind("gameUpdateAI", (data) => {
+            setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);
+          });
+        } catch (error) {
+          console.error("Pusher subscription failed:", error);
+        }
+      };
 
-      channel.bind("gamechat", (data) => {
-        setGameMessages((prevMessages) => [...prevMessages, data.gamechat[data.gamechat.length - 1]]);
-      });
+      setupPusher();
 
       return () => {
-        channel.unbind_all();
-        channel.unsubscribe();
+        pusher.unsubscribe(`gameUpdate-${lobbyid}`);
       };
     }
   }, [isGamePath, lobbyid]);

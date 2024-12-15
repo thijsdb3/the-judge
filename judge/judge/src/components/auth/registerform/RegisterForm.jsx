@@ -15,8 +15,8 @@ const RegisterForm=()=>{
     return(
         <form className = {styles.form} action = {formAction}>
                 <input type  ="text " placeholder ="username" name = "username"/> 
-                <input type  ="password " placeholder ="password" name = "password"/>
-                <input type  ="password " placeholder ="password again" name = "passwordRepeat"/>
+                <input type  ="password" placeholder ="password" name = "password"/>
+                <input type  ="password" placeholder ="password again" name = "passwordRepeat"/>
                 <button> Sign up </button>
                 {state?.error}
                 <Link href = "/login">have an account? <b>login</b></Link>

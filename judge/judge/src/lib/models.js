@@ -42,6 +42,11 @@ const gameSchema = new mongoose.Schema({
     unique: true,
     index: true,
   },
+  banner: {
+    type: String,
+    required: true,
+    default: "Judge should pick a Partner",
+  },
   players: [
     {
       player: {
@@ -52,15 +57,22 @@ const gameSchema = new mongoose.Schema({
       role: {
         type: String,
         required: true,
-        enum: ["Judge", "Good", "Evil", "Blindman"],
+        enum: ["Judge", "Good", "Evil"],
+      },
+      isOnTurn: {
+        type: Boolean,
+        default: false,
       },
     },
   ],
-  boardState: {
-    reds: { type: Number },
-    blues: { type: Number },
-  },
 
+  boardState: {
+    reds: { type: Number, default: 0 },
+    blues: { type: Number, default: 0 },
+  },
+  unpickablePlayers : [{
+      type: String,
+  }],
   drawPile: [
     {
       type: String,
@@ -74,10 +86,6 @@ const gameSchema = new mongoose.Schema({
     },
   ],
 
-  judge: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
   currentRound: {
     partner: {
       id: {
@@ -128,7 +136,18 @@ const gameSchema = new mongoose.Schema({
     ref: "User",
     default: null,
   },
+  playerBeingInvestigated: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+
   playerReverseInvestigating: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  playerBeingReverseInvestigated: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     default: null,
@@ -148,6 +167,7 @@ const gameSchema = new mongoose.Schema({
       ref: "User",
     },
   },
+
   gameChat: [
     {
       type: String,

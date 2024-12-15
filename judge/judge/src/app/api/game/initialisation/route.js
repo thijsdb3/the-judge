@@ -4,8 +4,6 @@ import { shuffle, assignRoles } from "@/lib/utils";
 import { triggerPusherEvent } from "@/lib/pusher";
 import { NextResponse } from "next/server";
 
-
-
 const BLUE_CARDS_COUNT = 12;
 const RED_CARDS_COUNT = 22;
 
@@ -23,8 +21,13 @@ export async function POST(req) {
       ...Array(BLUE_CARDS_COUNT).fill("blue"),
       ...Array(RED_CARDS_COUNT).fill("red"),
     ]);
-    const players = shuffle(assignRoles(gameLobby.players));
-    const judge =  players.find((p) => p.role === "Judge").player
+    let  players = shuffle(assignRoles(gameLobby.players));
+    const judgeIndex = players.findIndex((player) => player.role === "Judge");
+    if (judgeIndex !== -1) {
+      const judge = players.splice(judgeIndex, 1)[0];
+      judge.isOnTurn = true;
+      players = [judge, ...players];
+    }
 
     const currentRound = {
       partner: { id: null, cards: [] },
@@ -45,7 +48,6 @@ export async function POST(req) {
       boardState: { reds: 0, blues: 0 },
       drawPile: shuffledDrawPile,
       discardPile: [],
-      judge,
       currentRound,
       previousTeam,
       gameChat: ["Welcome to the Game!"],
@@ -53,9 +55,10 @@ export async function POST(req) {
 
     await newGame.save();
 
-    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
+    await triggerPusherEvent(`gameUpdate-${lobbyid}`, "game-start", {
+      lobbyid,
+    });
     return NextResponse.json({ status: 200 });
-    
   } catch (error) {
     console.error("Error during game initialization:", error);
     return NextResponse.json(
