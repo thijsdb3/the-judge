@@ -13,8 +13,8 @@ const pusher = new Pusher({
   cluster: "mt1",
 });
 
-const BLUE_CARDS_COUNT = 12;
-const RED_CARDS_COUNT = 22;
+const BLUE_CARDS_COUNT = 9;
+const RED_CARDS_COUNT = 16;
 
 export async function POST(req) {
   try {

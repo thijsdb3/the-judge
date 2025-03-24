@@ -52,7 +52,7 @@ const gameSchema = new mongoose.Schema({
       role: {
         type: String,
         required: true,
-        enum: ["Judge", "Good", "Evil", "Blindman"],
+        enum: ["Judge", "Good", "Evil"],
       },
     },
   ],

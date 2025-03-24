@@ -11,7 +11,7 @@ const Deck = ({ lobbyid, session }) => {
   const [userCards, setUserCards] = useState([]);
   const [phase, setPhase] = useState('unstarted');
   const [selectedCard, setSelectedCard] = useState(null);
-  const [cardsLeft, setCardsLeft] = useState(34);
+  const [cardsLeft, setCardsLeft] = useState(25);
   const [playerPeeking, setPlayerPeeking] = useState(false);
   const userid = session?.user.id;
   const pathname = usePathname();

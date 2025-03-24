@@ -96,9 +96,7 @@ const Players = ({ lobbyid, session }) => {
     }
 
     if (currentPlayerRole === "Evil" && playerRole === "Evil") return { color: 'red' };
-    if (currentPlayerRole === "Blindman" && playerUsername === username) return { color: '#A239CA' };
     if (currentPlayerRole === "Good" && playerUsername === username) return { color: 'blue' };
-    if (currentPlayerRole === "Evil" && playerRole === "Blindman") return { color: '#A239CA' };
 
     return { color: 'black' };
   }, [currentPlayerRole, investigationState, username]);

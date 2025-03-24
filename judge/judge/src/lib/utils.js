@@ -55,105 +55,41 @@ export const isNotTeamLocked = (game, selectedPlayer, playerCount) => {
       previousPlayers.includes(selectedPlayer.toString()))
   );
 };
-
 export const assignRoles = (players) => {
-  const shuffledPlayers = fisherYatesShuffle(players);
-  const totalPlayers = shuffledPlayers.length;
-  const assignedRoles = [];
-
-  const volunteeredPlayers = shuffledPlayers.filter(
-    (player) => player.judgeFlag
-  );
-
-  // Assign Judge
-  let judge;
-  if (volunteeredPlayers.length > 0) {
-    const judgeIndex = Math.floor(Math.random() * volunteeredPlayers.length);
-    judge = volunteeredPlayers[judgeIndex];
-  } else {
-    const judgeIndex = Math.floor(Math.random() * totalPlayers);
-    judge = shuffledPlayers[judgeIndex];
-  }
-  assignedRoles.push({ player: judge.id, role: "Judge" });
-
-  // Prepare remaining players list excluding the judge
-  const remainingPlayers = shuffledPlayers.filter(
-    (player) => player.id !== judge.id
-  );
-
-  let goodCount = 0,
-    evilCount = 0,
-    blindmanCount = 0;
-
-  // Set counts based on totalPlayers
-  switch (totalPlayers) {
-    case 4:
-      goodCount = 2;
-      evilCount = 1;
-      break;
-    case 5:
-      goodCount = 2;
-      evilCount = 2;
-      break;
-    case 6:
-      goodCount = 3;
-      evilCount = 2;
-      break;
-    case 7:
-      goodCount = 3;
-      evilCount = 3;
-      break;
-    case 8:
-      goodCount = 4;
-      evilCount = 3;
-      break;
-    case 9:
-      goodCount = 4;
-      evilCount = 3;
-      blindmanCount = 1;
-      break;
-    case 10:
-      goodCount = 5;
-      evilCount = 3;
-      blindmanCount = 1;
-      break;
-    case 11:
-      goodCount = 5;
-      evilCount = 4;
-      blindmanCount = 1;
-      break;
-    case 12:
-      goodCount = 6;
-      evilCount = 5;
-      blindmanCount = 1;
-      break;
-    case 13:
-      goodCount = 6;
-      evilCount = 6;
-      blindmanCount = 1;
-      break;
-    default:
-      throw new Error("Unsupported number of players. Supported counts: 4-13.");
+  if (players.length < 6 || players.length > 13) {
+    throw new Error("Supported player count: 4-13.");
   }
 
-  // Assign Blindman if applicable
-  if (blindmanCount > 0) {
-    assignedRoles.push({ player: remainingPlayers[0].id, role: "Blindman" });
-    remainingPlayers.shift(); // Remove the assigned player from the list
+  const shuffledPlayers = fisherYatesShuffle([...players]);
+
+  const roleCounts = {
+ 
+    6: { good: 3, evil: 2 },
+    7: { good: 3, evil: 3 },
+    8: { good: 4, evil: 3 },
+    9: { good: 4, evil: 4 },
+    10: { good: 5, evil: 4 },
+    11: { good: 5, evil: 5 },
+    12: { good: 6, evil: 5 },
+    13: { good: 6, evil: 6 },
+  };
+
+  const { good, evil } = roleCounts[players.length];
+
+  // Select judge (prefer volunteers)
+  const judge = shuffledPlayers.find(p => p.judgeFlag) || shuffledPlayers[0];
+  const remainingPlayers = shuffledPlayers.filter(p => p.id !== judge.id);
+
+  if (remainingPlayers.length < good + evil) {
+    throw new Error("Not enough players after judge selection.");
   }
 
-  // Assign Evil roles
-  for (let i = 0; i < evilCount; i++) {
-    assignedRoles.push({ player: remainingPlayers[i].id, role: "Evil" });
-  }
-
-  // Assign Good roles
-  for (let i = evilCount; i < evilCount + goodCount; i++) {
-    assignedRoles.push({ player: remainingPlayers[i].id, role: "Good" });
-  }
-
-
-  return assignedRoles;
+  // Assign roles
+  return [
+    { player: judge.id, role: "Judge" },
+    ...remainingPlayers.slice(0, evil).map(p => ({ player: p.id, role: "Evil" })),
+    ...remainingPlayers.slice(evil, evil + good).map(p => ({ player: p.id, role: "Good" }))
+  ];
 };
 
 export default connectToDB;
