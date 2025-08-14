@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import styles from "./Players.module.css";
 import Image from 'next/image';
 import { fisherYatesShuffle } from '@/lib/utils';
@@ -9,6 +9,8 @@ import Pusher from "pusher-js";
 
 const Players = ({ lobbyid, session }) => {
   const [players, setPlayers] = useState([]);
+  const [myTurn,setMyTurn] = useState(false);
+  const [unpickablePlayers, setUnpickablePlayers] = useState([])
   const [currentPlayerRole, setCurrentPlayerRole] = useState(null);
   const [investigationState, setInvestigationState] = useState({
     playerInvestigating: null,
@@ -39,17 +41,26 @@ const Players = ({ lobbyid, session }) => {
         playerBeingReverseInvestigated: data.playerBeingReverseInvestigated,
       }));
     };
-
+    const pickUpdate = (data) => {
+      setMyTurn(data.myTurn);
+      setUnpickablePlayers(data.unselectables);
+    };
+  
     channel.bind("investigation", handleInvestigation);
     channel.bind("reverse investigation", handleReverseInvestigation);
-
+    channel.bind("pickUpdate", pickUpdate);
     return () => {
       channel.unbind("investigation", handleInvestigation);
       channel.unbind("reverse investigation", handleReverseInvestigation);
+      channel.unbind("pickUpdate",pickUpdate);
       channel.unsubscribe();
       pusher.disconnect();
     };
   }, [lobbyid, userid]);
+
+
+
+    
 
   const fetchPlayers = useCallback(async () => {
     if (!username) return;
@@ -67,10 +78,8 @@ const Players = ({ lobbyid, session }) => {
       
       const data = await res.json();
       const allPlayers = data.players;
-
       const currentPlayer = allPlayers.find(player => player.username === username);
       setCurrentPlayerRole(currentPlayer?.role);
-
       const judgePlayer = allPlayers.find(player => player.role === "Judge");
       const otherPlayers = allPlayers.filter(player => player.role !== "Judge");
       const orderedPlayers = judgePlayer ? [judgePlayer, ...fisherYatesShuffle(otherPlayers)] : fisherYatesShuffle(otherPlayers);
@@ -107,7 +116,9 @@ const Players = ({ lobbyid, session }) => {
       <ul className={styles.playerlist}>
         {players.map((player, index) => (
           <li
-            className={`${styles.playerlistelement} ${styles.myTurn}`}
+              className={`${styles.playerlistelement} 
+              ${myTurn ? styles.myTurn : ""} 
+              ${myTurn && !unpickablePlayers.includes(player.username) ? styles.selectable : ""}`}
             key={index}
             style={getPlayerStyle(player.role, player.username)}
             onClick={() => handlePick(player, lobbyid, username)}

@@ -29,8 +29,14 @@
     cursor: pointer; /* Change the cursor when it's the player's turn */
   }
   
-  .myTurn:hover {
+  .selectable:hover {
     background-color: #f0f0f0; /* Add hover effect */
     transform: scale(1.05); /* Optional: Add a scaling effect */
     transition: background-color 0.3s ease, transform 0.2s ease;
   }
+.selectable {
+  border-radius: 5px;
+  background-color: #fff8dc; /* light cream yellow */
+  box-shadow: 0 0 10px #ffd70066; /* soft glow */
+  transition: all 0.2s ease;
+}

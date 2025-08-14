@@ -1,5 +1,5 @@
 import connectToDB from "@/lib/utils";
-import { Game, GameLobby } from "@/lib/models";
+import { Game, GameLobby, User } from "@/lib/models";
 import { fisherYatesShuffle, assignRoles } from "@/lib/utils";
 import Pusher from "pusher";
 import { NextResponse } from "next/server";
@@ -31,9 +31,12 @@ export async function POST(req) {
       ...Array(RED_CARDS_COUNT).fill("red"),
     ]);
     const players = assignRoles(gameLobby.players);
-    console.log(players);
+
+    const judge = players.find((p) => p.role === "Judge").player;
+    const judgeUser = await User.findById(judge).select("username");
+    console.log(judgeUser);
     const currentRound = {
-      judge: players.find((p) => p.role === "Judge").player,
+      judge,
       partner: { id: null, cards: [] },
       associate: { id: null, cards: [] },
       paralegal: { id: null, cards: [] },
@@ -57,10 +60,20 @@ export async function POST(req) {
       previousTeam,
       gameChat: ["Welcome to the Game!"],
     });
+    newGame.currentRound.unselectables = [judge];
 
     await newGame.save();
 
     await pusher.trigger(`gameUpdate-${lobbyid}`, "game-start", { lobbyid });
+
+    await pusher.trigger(
+      `gameUpdate-${lobbyid}-${judge.toString()}`,
+      "pickUpdate",
+      {
+        myTurn: true,
+        unselectables: [judgeUser.username],
+      }
+    );
 
     return NextResponse.json({ status: 200 });
   } catch (error) {

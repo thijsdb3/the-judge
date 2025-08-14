@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import connectToDB from "@/lib/utils";
+import connectToDB, { fisherYatesShuffle } from "@/lib/utils";
 import { Game } from "@/lib/models";
 import Pusher from "pusher";
-import { fisherYatesShuffle } from "@/lib/utils";
-// Initialize Pusher
+import { transitionPhase } from "@/lib/phaseTransition";
 const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
 
 const pusher = new Pusher({
@@ -198,12 +197,6 @@ async function handlePeekAndDiscard(game, discardOption, card, lobbyid) {
   return NextResponse.json({ message: "Peek and Discard completed" });
 }
 
-// Function to handle phase transitions
-async function transitionPhase(game, newPhase) {
-  game.currentRound.phase = newPhase;
-  await game.save();
-}
-
 // function to clear the round to set up for the next
 async function clearRound(game) {
   if (game.currentRound.partner.id) {
@@ -224,7 +217,6 @@ async function clearRound(game) {
   game.currentRound.partner.cards = null;
   game.currentRound.associate.cards = null;
   game.currentRound.paralegal.cards = null;
-
   await game.save();
 }
 

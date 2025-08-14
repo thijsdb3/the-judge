@@ -54,6 +54,11 @@ const gameSchema = new mongoose.Schema({
         required: true,
         enum: ["Judge", "Good", "Evil"],
       },
+      onTurn: {
+        type: Boolean,
+        required: true,
+        default: false,
+      },
     },
   ],
   boardState: {
@@ -119,6 +124,12 @@ const gameSchema = new mongoose.Schema({
         "game ended",
       ],
     },
+    unselectables: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   playerInvestigating: {
     type: mongoose.Schema.Types.ObjectId,
