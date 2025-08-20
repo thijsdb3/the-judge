@@ -26,7 +26,7 @@ coming soon
 
 - **Frontend:** Next.js, React, TailwindCSS  
 - **Backend:** Node.js, MongoDB, Pusher  
-- **Languages:** JavaScript, TypeScript  
+- **Languages:** JavaScript
 
 ---
 
@@ -35,7 +35,6 @@ coming soon
 - 🔑 Authentication system (login/signup)  
 - 🧑‍🤝‍🧑 Real-time lobby with player list  
 - ⚡ Role assignment (Judge, Honest, Corrupt)  
-- 💬 In-game chat  
 - 🃏 Card phases & decision-making rounds  
 
 ---
