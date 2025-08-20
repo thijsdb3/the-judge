@@ -26,5 +26,5 @@ is a social detuction (SD) game from 6 to 13 players. The differentiator between
 - 🃏 Card phases & decision-making rounds  
 
 ---
-## Disclaimer
+
 
