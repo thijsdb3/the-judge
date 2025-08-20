@@ -24,7 +24,7 @@ export default function RulesPage() {
         <h2>3. Components</h2>
         <ul>
           <li>Roles (assigned automatically)</li>
-          <li>Evidence deck: 22 red and 12 blue</li>
+          <li>Evidence deck: 16 red and 9 blue</li>
           <li>
             Game chat: notifies users real-time if a move has been made
           </li>
