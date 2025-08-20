@@ -11,7 +11,7 @@ is a social detuction (SD) game from 6 to 13 players. The differentiator between
 
 ## 🚀 Tech Stack  
 
-- **Frontend:** Next.js, React, TailwindCSS  
+- **Frontend:** Next.js, React, CSS 
 - **Backend:** Node.js, MongoDB, Pusher  
 - **Languages:** JavaScript
 
