@@ -8,7 +8,7 @@ export default function RulesPage() {
 
       <section>
         <h2>1. Introduction and Theme</h2>
-        <p>Placeholder.</p>
+        <p>An innocent person is standing trial for murder!!! Some lawyers are trying to prove the innocence of the person, while others being bought by the true Culprit want to frame the person. Could you, being the qualified lawyer you are, sucesfully sway the Judge.</p>
       </section>
 
       <section>
