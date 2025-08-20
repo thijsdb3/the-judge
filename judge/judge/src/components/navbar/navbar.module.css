@@ -7,11 +7,14 @@
     align-items: center;
     position: relative;
     justify-content: space-between;
+    font-family: 'Arial', sans-serif;
+
 }
 
 .logo{
     font-size: 30px ;
     font-weight: bold;
+
 }
 .username {
     margin-right: 100px;

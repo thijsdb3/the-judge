@@ -8,7 +8,10 @@ export default function RulesPage() {
 
       <section>
         <h2>1. Introduction and Theme</h2>
-        <p>An innocent person is standing trial for murder!!! Some lawyers are trying to prove the innocence of the person, while others being bought by the true Culprit want to frame the person. Could you, being the qualified lawyer you are, sucesfully sway the Judge.</p>
+        <p>An innocent man is on trial for murder. The murderer has hired a team of corrupted lawyers determined to see the innocent man found guilty. The Judge is a social deduction game where one brave player tests their social reads and logical prowess to solve the case. 
+<br />
+<br />
+One player assumes the role of the Judge and must determine who among the legal staff presents honest evidence and who has been corrupted and presents corrupted evidence. With enough honest evidence presented, the case will be solved correctly. However, with enough corrupt evidence presented, the truth will be lost… </p>
       </section>
 
       <section>

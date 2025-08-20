@@ -7,12 +7,14 @@
     gap: 20px;
     background-size: cover;
 
+
 }
 .button {
     padding: 40px 100px; 
     font-size: 24px; 
     background-color:#6488EA; 
     color: #E7DFDD;
+    font-family: 'Arial', sans-serif;
     border: none;
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
