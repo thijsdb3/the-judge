@@ -7,7 +7,6 @@ import { handleLogout } from "@/lib/action";
 const links = [
   { title: "Homepage", path: "/" },
   { title: "Rules", path: "/rules" },
-  { title: "Discord", path: "/discord" },
 ];
 
 const Links = ({ session }) => {
