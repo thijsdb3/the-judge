@@ -1,7 +1,9 @@
 # ⚖️ The Judge  
 
 A website for the yet-unpublished social deduction game **The Judge**.  
+The game has been **successfully playtested multiple times online**, and all core mechanics are implemented.  
 
+🚧 **Note:** While the game is fully playable, the user experience (UX) still needs polish to make the interface more intuitive.  
 ---
 
 ## 🎮 About the Game  
@@ -25,3 +27,5 @@ is a social detuction (SD) game from 6 to 13 players. The differentiator between
 - 🃏 Card phases & decision-making rounds  
 
 ---
+## Disclaimer
+
