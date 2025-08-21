@@ -11,21 +11,21 @@
 }
 
 .rulescontainer h1 {
-  color: #b71c1c; /* deep red to match navbar */
+  color: #6b3a7a;
   font-size: 2rem;
   margin-bottom: 1.5rem;
-  border-bottom: 3px solid #e74c3c;
+  border-bottom: 3px solid #6b3a7a;
   padding-bottom: 0.5rem;
 }
 
 .rulescontainer h2 {
-  color: #444;
+  color: #3c2f2f;
   font-size: 1.5rem;
   margin-top: 1.5rem;
 }
 
 .rulescontainer h3 {
-  color: #444;
+  color: #3c2f2f;
   margin-top: 1rem;
   font-size: 1.25rem;
 }
@@ -40,7 +40,6 @@
 }
 
 .rulescontainer blockquote {
-  border-left: 4px solid #e74c3c;
   margin: 1rem 0;
   padding-left: 1rem;
   color: #555;
@@ -62,7 +61,7 @@
 }
 
 .rulescontainer th {
-  background: #e74c3c;
+  background: #6b3a7a;
   color: white;
 }
 

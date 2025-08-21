@@ -1,11 +1,10 @@
 
 :root{
-    --bg :  #FABBCF;
     --text :white ;
     --bgSoft : #2d2b42;
     --textSoft: #e5e5e5;
     --btn : #3673fd;
-
+    --bg : url("/images/parchment.png") center center / cover no-repeat fixed;
 }
 *{
     margin : 0;
