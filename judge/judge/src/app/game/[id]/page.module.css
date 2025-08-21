@@ -7,10 +7,9 @@
   
   .container {
     display: flex;
-    height: calc(-80px + 100vh); 
+    height: calc(-90px + 100vh); 
   }
   
-  /* Left part styling */
   .leftpart {
     width: 40%;
     background-color: #f8f8f8;
@@ -19,7 +18,6 @@
     text-align: center;
   }
   
-  /* Right part styling */
   .rightpart {
     width: 90%;
     display: flex;
@@ -29,9 +27,8 @@
     background-color: #f8f8f8;
   }
   
-  /* Each section inside the right part */
   .section {
-    flex: 1; /* Each section takes equal space vertically */
+    flex: 1; 
     display: flex;
     justify-content: center;
     align-items: center;
@@ -40,7 +37,7 @@
   }
   
   .section:last-child {
-    border-bottom: none; /* Remove border from the last section */
+    border-bottom: none; 
   }
   .title{
     color:black;
