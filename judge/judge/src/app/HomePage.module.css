@@ -42,7 +42,7 @@
 
 .section {
   color: black;
-  font-size: x-large;
+  font-size: 21px;
   font-family: 'Arial', sans-serif;
   max-width: 800px;           /* keeps lines readable */
   margin-bottom: 1.5rem;
