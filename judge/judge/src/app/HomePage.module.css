@@ -6,8 +6,10 @@
     min-height: 89vh;
     gap: 40px;
     background-size: cover;
-
-
+    
+}
+.all{
+background: url("/images/parchment.png") center center / cover no-repeat fixed;
 }
 .button {
   padding: 20px 60px;

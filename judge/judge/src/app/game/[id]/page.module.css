@@ -1,3 +1,5 @@
+
+
 .all {
     margin: 0;
     padding: 0;
@@ -40,5 +42,6 @@
     border-bottom: none; 
   }
   .title{
+    margin-left: 10px;
     color:black;
   }
