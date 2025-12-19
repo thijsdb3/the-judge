@@ -1,29 +1,15 @@
 import { NextResponse } from "next/server";
-import connectToDB from "@/lib/utils";
+import connectToDB, { pushGameChat } from "@/lib/utils";
 import { Game, User } from "@/lib/models";
-import Pusher from "pusher";
 import { reshuffleDeck } from "@/lib/utils";
-import { transitionPhase } from "@/lib/phaseTransition";
-
-const { PUSHER_APP_ID, NEXT_PUBLIC_PUSHER_KEY, PUSHER_SECRET } = process.env;
-
-const pusher = new Pusher({
-  appId: PUSHER_APP_ID,
-  key: NEXT_PUBLIC_PUSHER_KEY,
-  secret: PUSHER_SECRET,
-  cluster: "mt1",
-});
-
-async function triggerPusherEvent(channel, event, data) {
-  try {
-    await pusher.trigger(channel, event, data);
-  } catch (error) {
-    console.error(
-      `Error triggering Pusher event: ${event} on ${channel}`,
-      error
-    );
-  }
-}
+import { transitionPhase, triggerPusherEvent } from "@/lib/phaseTransition";
+import {
+  judgePicksInvestigator,
+  judgePicksReverseInvestigator,
+  handleInvestigation,
+  handleReverseInvestigation,
+  handlePeekAndDiscard,
+} from "@/lib/specialPowers";
 
 export async function POST(request) {
   const { lobbyid, selectedPlayer, playerClicking } = await request.json();
@@ -112,51 +98,38 @@ export async function POST(request) {
 }
 
 async function handleJudgePicksPartner(par) {
-  if (par.playerClickingId.equals(par.game.currentRound.judge)) {
-    if (!par.unselectables.includes(par.selectedPlayerId)) {
-      par.game.currentRound.partner.id = par.selectedPlayerId;
-      transitionPhase(par.game, "Partner Picks Associate");
-
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Partner`
-      );
-
-      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
-      });
-    }
-  }
+  return handleRolePick({
+    par,
+    requiredRoleId: par.game.currentRound.judge,
+    assignRolePath: (game, id) => (game.currentRound.partner.id = id),
+    nextPhase: "Partner Picks Associate",
+    chatMessage: `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Partner`,
+  });
 }
 
 async function handlePartnerPicksAssociate(par) {
-  if (par.playerClickingId.equals(par.game.currentRound.partner.id)) {
-    if (!par.unselectables.includes(par.selectedPlayerId)) {
-      par.game.currentRound.associate.id = par.selectedPlayerId;
-      transitionPhase(par.game, "Associate Picks Paralegal");
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Associate`
-      );
-      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
-      });
-    }
-  }
+  return handleRolePick({
+    par,
+    requiredRoleId: par.game.currentRound.partner.id,
+    assignRolePath: (game, id) => (game.currentRound.associate.id = id),
+    nextPhase: "Associate Picks Paralegal",
+    chatMessage: `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Associate`,
+  });
 }
 
 async function handleAssociatePicksParalegal(par) {
-  if (par.playerClickingId.equals(par.game.currentRound.associate.id)) {
-    if (!par.unselectables.includes(par.selectedPlayerId)) {
-      par.game.currentRound.paralegal.id = par.selectedPlayerId;
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
-      );
+  if (!par.playerClickingId.equals(par.game.currentRound.associate.id)) return;
+  if (par.unselectables.includes(par.selectedPlayerId)) return;
 
-      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
-      });
-      await setUpForNextCardPhase(par);
-    }
-  }
+  par.game.currentRound.paralegal.id = par.selectedPlayerId;
+
+  await pushGameChat(
+    par.game,
+    par.lobbyid,
+    `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to be the Paralegal`
+  );
+
+  await setUpForNextCardPhase(par);
 }
 
 async function setUpForNextCardPhase(par) {
@@ -194,142 +167,18 @@ async function setUpForNextCardPhase(par) {
   );
 }
 
-async function handlePeekAndDiscard(par) {
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.currentRound.playerPeeking.id == null
-  ) {
-    par.game.currentRound.playerPeeking = {
-      id: par.selectedPlayerId,
-      cards: [],
-    };
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to peek at cards and discard`
-    );
+async function handleRolePick({
+  par,
+  requiredRoleId,
+  assignRolePath,
+  nextPhase,
+  chatMessage,
+}) {
+  if (!par.playerClickingId.equals(requiredRoleId)) return;
+  if (par.unselectables.includes(par.selectedPlayerId)) return;
 
-    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
-    par.game.currentRound.playerPeeking.cards = par.game.drawPile.splice(0, 2);
+  assignRolePath(par.game, par.selectedPlayerId);
+  transitionPhase(par.game, nextPhase);
 
-    await triggerPusherEvent(
-      `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
-      "peekAndDiscardPhaseStarted",
-      { cards: par.game.currentRound.playerPeeking.cards }
-    );
-    await triggerPusherEvent(
-      `gameUpdate-${par.game.gameid}`,
-      "updateDeckCount",
-      { cardsLeft: par.game.drawPile.length }
-    );
-  }
-}
-
-async function judgePicksInvestigator(par) {
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.playerInvestigating == null
-  ) {
-    par.game.playerInvestigating = par.selectedPlayerId;
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to investigate`
-    );
-
-    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
-    transitionPhase(par.game, "investigation");
-  }
-}
-
-async function judgePicksReverseInvestigator(par) {
-  if (
-    par.playerClickingId.equals(par.game.currentRound.judge) &&
-    par.game.playerReverseInvestigating == null
-  ) {
-    par.game.playerReverseInvestigating = par.selectedPlayerId;
-    par.game.gameChat.push(
-      `${par.playerClickingUsername} picked ${par.selectedPlayerUsername} to reverse investigate`
-    );
-
-    await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-      gamechat: par.game.gameChat,
-    });
-    transitionPhase(par.game, "reverse investigation");
-  }
-}
-
-async function handleInvestigation(par) {
-  if (
-    par.playerClickingId.equals(par.game.playerInvestigating) &&
-    par.game.playerBeingInvestigated == null
-  ) {
-    par.game.playerBeingInvestigated = par.selectedPlayerId;
-    const playerClicking = par.game.players.find((p) =>
-      p.player._id.equals(par.playerClickingId)
-    );
-    const playerBeingClicked = par.game.players.find((p) =>
-      p.player._id.equals(par.selectedPlayerId)
-    );
-
-    if (playerClicking && playerBeingClicked) {
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} chose to see ${par.selectedPlayerUsername}'s role`
-      );
-
-      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
-      });
-      await triggerPusherEvent(
-        `gameUpdate-${par.lobbyid}-${par.playerClickingId}`,
-        "investigation",
-        {
-          playerInvestigating: par.playerClickingUsername,
-          playerBeingInvestigated: par.selectedPlayerUsername,
-        }
-      );
-    } else {
-      console.error("Player data could not be found for investigation.");
-    }
-  }
-
-  transitionPhase(par.game, "Judge Picks Partner");
-}
-
-async function handleReverseInvestigation(par) {
-  if (
-    par.playerClickingId.equals(par.game.playerReverseInvestigating) &&
-    par.game.playerBeingReverseInvestigated == null
-  ) {
-    par.game.playerBeingReverseInvestigated = par.selectedPlayerId;
-    const playerClicking = par.game.players.find((p) =>
-      p.player._id.equals(par.playerClickingId)
-    );
-    const playerBeingClicked = par.game.players.find((p) =>
-      p.player._id.equals(par.selectedPlayerId)
-    );
-
-    if (playerClicking && playerBeingClicked) {
-      par.game.gameChat.push(
-        `${par.playerClickingUsername} chose to show ${par.selectedPlayerUsername} their role`
-      );
-
-      await triggerPusherEvent(`gameUpdate-${par.lobbyid}`, "gamechat", {
-        gamechat: par.game.gameChat,
-      });
-      await triggerPusherEvent(
-        `gameUpdate-${par.lobbyid}-${par.selectedPlayerId}`,
-        "reverse investigation",
-        {
-          playerReverseInvestigating: par.playerClickingUsername,
-          playerBeingReverseInvestigated: par.selectedPlayerUsername,
-        }
-      );
-    } else {
-      console.error(
-        "Player data could not be found for reverse investigation."
-      );
-    }
-  }
-  transitionPhase(par.game, "Judge Picks Partner");
+  await pushGameChat(par.game, par.lobbyid, chatMessage);
 }

@@ -16,6 +16,7 @@ const Deck = ({ lobbyid, session }) => {
   const userid = session?.user.id;
   const pathname = usePathname();
   const isGamePath = pathname.startsWith('/game/');
+  const [flippedCards, setFlippedCards] = useState([]);
 
   useEffect(() => {
     // Fetch current state from the database on component mount
@@ -65,19 +66,18 @@ const Deck = ({ lobbyid, session }) => {
         channel.bind('pusher:subscription_error', (status) => {
           console.error('Pusher subscription error:', status);
         });
-  
+
         channel.bind('cardPhaseStarted', () => setPhase('seeCards'));
-  
+
+        deckinfochannel.bind('showFlip', (message) => {
+          setFlippedCards(message.cards);
+          setPhase('showFlip');
+        }); 
+
         channel.bind('seeCards', (message) => {
           setUserCards(message.cards);
           setPhase('discardCard');
         });
-  
-        channel.bind('receivePartnerCards', (message) => {
-          setUserCards(message.cards);
-          setPhase('discardCard');
-        });
-  
         channel.bind('peekAndDiscardPhaseStarted', (message) => {
           setPlayerPeeking(true);
           setUserCards(message.cards);
@@ -96,8 +96,15 @@ const Deck = ({ lobbyid, session }) => {
         };
       }
     }, [session, lobbyid]);
-  
-    // Function to fetch and see the cards when the user clicks a button
+   useEffect(() => {
+    if (phase === 'showFlip') {
+      const timer = setTimeout(() => {
+        setFlippedCards([]);
+        setPhase('unstarted'); 
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase]);
     const handleSeeCardsClick = async () => {
       if (phase === 'seeCards' || phase === 'receivePartnerCards') {
         await fetch('/api/game/gameround/cardPhase', {
@@ -166,7 +173,24 @@ const Deck = ({ lobbyid, session }) => {
             See Your Cards
           </button>
         )}
-
+        {phase === 'showFlip' && (
+  <div className={styles.flippedCardsContainer}>
+    <h3>Flipped Cards</h3>
+    <div className={styles.flippedCards}>
+      {flippedCards.map((card, index) => (
+        <div key={index} className={styles.cardlayout}>
+          <Image 
+            src={`/images/${card}.png`} 
+            alt={`Flipped ${card}`} 
+            layout="responsive"  
+            width={200} 
+            height={200} 
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+)}
         {phase === 'discardCard' && userCards.map((card, index) => (
           <div 
             key={index} 

@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-
+import { triggerPusherEvent } from "./phaseTransition";
 const connection = {};
 
 const connectToDB = async () => {
@@ -47,8 +47,7 @@ export const getUnselectablePlayers = (game, playerCount, phase) => {
     Prevteam.partner,
     Prevteam.associate,
     Prevteam.paralegal,
-  ]
-    .filter(Boolean);
+  ].filter(Boolean);
 
   const unselectables = game.players
     .map((p) => p.player)
@@ -128,5 +127,11 @@ export const assignRoles = (players) => {
       .map((p) => ({ player: p.id, role: "Good" })),
   ];
 };
+export async function pushGameChat(game, lobbyid, message) {
+  game.gameChat.push(message);
+  await triggerPusherEvent(`gameUpdate-${lobbyid}`, "gamechat", {
+    gamechat: game.gameChat,
+  });
+}
 
 export default connectToDB;

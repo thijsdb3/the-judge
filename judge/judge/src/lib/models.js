@@ -115,6 +115,7 @@ const gameSchema = new mongoose.Schema({
         "Partner Picks Associate",
         "Associate Picks Paralegal",
         "seeCards",
+        "showFlip",
         "discardCard",
         "Peek and Discard",
         "Judge picks investigator",

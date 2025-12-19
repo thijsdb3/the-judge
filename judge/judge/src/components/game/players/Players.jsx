@@ -58,7 +58,20 @@ const Players = ({ lobbyid, session }) => {
     };
   }, [lobbyid, userid]);
 
+useEffect(() => {
+  if (!userid) return;
 
+  fetch("/api/game/currentTurnState", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ lobbyid, userid }),
+  })
+    .then(res => res.json())
+    .then(data => {
+      setMyTurn(data.myTurn);
+      setUnpickablePlayers(data.unselectables);
+    });
+}, [lobbyid, userid]);
 
     
 
