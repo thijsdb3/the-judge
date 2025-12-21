@@ -65,6 +65,7 @@ async function pushPickInfo(game, phase) {
       break;
 
     case "Peek and Discard":
+    case "Choose Peeking Player":
     case "Judge picks investigator":
     case "Judge picks reverse investigator":
       await send(game.currentRound.judge, true);

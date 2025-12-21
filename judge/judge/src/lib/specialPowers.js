@@ -76,7 +76,7 @@ export async function handleSpecialPowers(game, isBlue) {
   const playerCount = game.players.length;
 
   if (!isBlue && reds === 2) {
-    await resetRoundAndTransition(game, "Peek and Discard");
+    await resetRoundAndTransition(game, "Choose Peeking Player");
     return true;
   }
 
@@ -129,19 +129,73 @@ export async function handlePeekAndDiscard(par) {
     cardsLeft: par.game.drawPile.length,
   });
 
-  transitionPhase(par.game, "Judge Picks Partner");
+  transitionPhase(par.game, "Peek and Discard");
+  await par.game.save();
+  return NextResponse.json({ success: true });
+}
+export async function handlePeekDecision(game, discardOption, card, lobbyid) {
+  const playerPeeking = game.currentRound.playerPeeking;
+
+  const [cardA, cardB] = playerPeeking.cards;
+  const player = game.players.find(
+    (p) => p.player.toString() === playerPeeking.id.toString()
+  );
+
+  const username = player?.player.username;
+  if (discardOption === "discardOne") {
+    if (!card || !playerPeeking.cards.includes(card)) {
+      return NextResponse.json({ error: "Invalid card" }, { status: 400 });
+    }
+
+    const keptCard = card === cardA ? cardB : cardA;
+
+    game.discardPile.push(card);
+    // unshift puts at begining
+    game.drawPile.unshift(keptCard);
+
+    await pushGameChat(
+      game,
+      lobbyid,
+      `${username} peeked at two cards and discarded one`
+    );
+  }
+
+  if (discardOption === "discardNone") {
+    game.drawPile.unshift(cardA, cardB);
+
+    await pushGameChat(
+      game,
+      lobbyid,
+      `${username} peeked at two cards and put both back into the deck`
+    );
+  }
+
+  game.currentRound.playerPeeking = null;
+  transitionPhase(game, "Judge Picks Partner");
+  await game.save();
+
+  await triggerPusherEvent(`gameUpdate-${lobbyid}`, "updateDeckCount", {
+    cardsLeft: game.drawPile.length,
+  });
+ 
   return NextResponse.json({ success: true });
 }
 
 export async function handleVetoIfApplicable(game, isBlue, lobbyid) {
   if (!isBlue && game.HonestVetoEnabled) {
-    return handleVetoGeneric(game, lobbyid, "Good", "Judge Picks Partner", [
-      "Entire team is good",
-      "Corrupt evidence automatically vetoed",
-      game.players.length === 6
-        ? "Honest team has won"
-        : "Judge needs to pick a new team",
-    ]);
+    const honestWins = game.players.length === 6;
+
+    return handleVetoGeneric(
+      game,
+      lobbyid,
+      "Good",
+      honestWins ? "game ended" : "Judge Picks Partner",
+      [
+        "Entire team is good",
+        "Corrupt evidence automatically vetoed",
+        honestWins ? "Honest team has won" : "Judge needs to pick a new team",
+      ]
+    );
   }
 
   if (isBlue && game.CorruptVetoEnabled) {

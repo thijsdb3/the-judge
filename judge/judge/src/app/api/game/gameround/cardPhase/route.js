@@ -7,7 +7,7 @@ import { resetRoundAndTransition } from "@/lib/roundUtils";
 import {
   handleSpecialPowers,
   handleVetoIfApplicable,
-  handlePeekAndDiscard,
+  handlePeekDecision,
 } from "@/lib/specialPowers";
 
 export async function POST(request) {
@@ -34,8 +34,8 @@ export async function POST(request) {
 
     case "discardCard":
       return handleDiscardCard(game, userid, userCards, card, lobbyid);
-    case "showFlip":
-      return handleShowFlip(game, userCards, card, lobbyid);
+    case "Peek and Discard":
+      return handlePeekDecision(game, discardOption, card, lobbyid);
     default:
       return NextResponse.json(
         { error: "Invalid action specified." },
@@ -49,29 +49,6 @@ async function handleSeeCards(game, userCards, lobbyid, userid) {
   await triggerPusherEvent(`gameUpdate-${lobbyid}-${userid}`, "seeCards", {
     cards: userCards,
   });
-  return NextResponse.json({ cards: userCards });
-}
-async function handleShowFlip(game, userCards, lobbyid, userid) {
-  const partnerId = game.currentRound.partner.id?.toString();
-
-  if (userid !== partnerId) {
-    return NextResponse.json(
-      { error: "Only partner can reveal cards" },
-      { status: 403 }
-    );
-  }
-
-  if (!Array.isArray(userCards) || userCards.length === 0) {
-    return NextResponse.json({ error: "No cards to reveal" }, { status: 400 });
-  }
-
-  game.currentRound.phase = "showFlip";
-  await game.save();
-
-  await triggerPusherEvent(`gameUpdate-${lobbyid}`, "showFlip", {
-    cards: userCards,
-  });
-
   return NextResponse.json({ cards: userCards });
 }
 
@@ -110,7 +87,11 @@ async function discardByNonPartner(game, userid, remainingCards, card) {
 async function discardByPartner(game, remainingCards, lobbyid) {
   game.discardPile.push(...remainingCards);
 
-  await revealPartnerCards(remainingCards, lobbyid);
+  await pushGameChat(
+    game,
+    lobbyid,
+    `Remaining cards: ${remainingCards.join(", ")}`
+  );
 
   const isBlue = resolvePolicy(remainingCards);
 
@@ -132,11 +113,6 @@ async function discardByPartner(game, remainingCards, lobbyid) {
 
   await resetRoundAndTransition(game, "Judge Picks Partner");
   return null;
-}
-async function revealPartnerCards(cards, lobbyid) {
-  await triggerPusherEvent(`gameUpdate-${lobbyid}`, "showFlip", {
-    cards,
-  });
 }
 
 async function enactPolicy(game, isBlue, lobbyid) {
@@ -198,7 +174,7 @@ async function checkWinCondition(game, isBlue, lobbyid) {
 }
 
 function removeOneCard(cards, card) {
-  const index = cards.indexOf(card);
+  const index = cards?.indexOf(card);
   if (index === -1) return [...cards];
   return cards.filter((_, i) => i !== index);
 }

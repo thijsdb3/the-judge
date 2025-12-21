@@ -30,8 +30,9 @@ function getTurnOwnerIds(game) {
       return associate?.id ? [associate.id] : [];
 
     case "Peek and Discard":
+      return [];
+    case "Choose Peeking Player":
       return [judge];
-
     case "Judge picks investigator":
       return [judge];
 

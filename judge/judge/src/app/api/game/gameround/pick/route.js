@@ -74,7 +74,7 @@ export async function POST(request) {
       await handleAssociatePicksParalegal(args);
       break;
 
-    case "Peek and Discard":
+    case "Choose Peeking Player":
       await handlePeekAndDiscard(args);
       break;
     case "Judge picks investigator":

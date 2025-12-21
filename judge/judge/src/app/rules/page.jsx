@@ -122,11 +122,11 @@ One player assumes the role of the Judge and must determine who among the legal 
             deck.
           </li>
           <li>
-            <strong>Investigate</strong> (6–13): Judge assigns Power token. That player views any
+            <strong>Investigate</strong> (7–13): Judge assigns Power token. That player views any
             other player’s role card.
           </li>
           <li>
-            <strong>Reverse Investigate</strong> (11–13): Judge assigns Power token. That player
+            <strong>Reverse Investigate</strong> (9–13): Judge assigns Power token. That player
             reveals their own role to another player.
           </li>
           <li>

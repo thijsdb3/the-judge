@@ -69,11 +69,6 @@ const Deck = ({ lobbyid, session }) => {
 
         channel.bind('cardPhaseStarted', () => setPhase('seeCards'));
 
-        deckinfochannel.bind('showFlip', (message) => {
-          setFlippedCards(message.cards);
-          setPhase('showFlip');
-        }); 
-
         channel.bind('seeCards', (message) => {
           setUserCards(message.cards);
           setPhase('discardCard');
@@ -96,15 +91,7 @@ const Deck = ({ lobbyid, session }) => {
         };
       }
     }, [session, lobbyid]);
-   useEffect(() => {
-    if (phase === 'showFlip') {
-      const timer = setTimeout(() => {
-        setFlippedCards([]);
-        setPhase('unstarted'); 
-      }, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [phase]);
+    
     const handleSeeCardsClick = async () => {
       if (phase === 'seeCards' || phase === 'receivePartnerCards') {
         await fetch('/api/game/gameround/cardPhase', {
