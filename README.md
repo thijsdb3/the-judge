@@ -1,32 +1,41 @@
-# The Judge  
+# The Judge
 
-A fully functional website for the yet-unpublished social deduction game **The Judge**.  
-The game has been **successfully playtested multiple times online**, and all core mechanics are implemented.  
+A fully functional website for the yet-unpublished social deduction game **The Judge**.
 
-**Note:** While the game is fully playable, the user experience (UX) still needs polish to make the interface more intuitive.  
+The game has been **successfully playtested multiple times online**, and all core game mechanics are implemented.
 
-##  About the Game  
+**Note:** While the game is fully playable, the user experience (UX) still needs further polish to make the interface more intuitive.
 
-**The judge**
-is a social detuction (SD) game from 6 to 13 players. The differentiator between other SD games such as (werewolves, avalon, town of salem,...) is that there is a person, namely, the judge that is confirmed on the honest team who has to figure out which of the other players
+## About the Game
 
-the rules can be found on the rules tab: https://the-judge.vercel.app/rules
+**The Judge** is a social deduction game for 6–13 players. Unlike other social deduction games such as Werewolves, Avalon, and Town of Salem, **The Judge** introduces a player who is confirmed to be on the honest team and must figure out which of the other players are corrupt.
 
-## Tech Stack  
+The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
 
-- **Frontend:** Next.js, React, CSS 
-- **Backend:** Node.js, MongoDB, Pusher  
-- **Languages:** JavaScript
+## Tech Stack
 
----
-
-## Features  
-
-- Authentication system (login/signup)  
-- Real-time lobby with player list  
-- Role assignment (Judge, Honest, Corrupt)  
-- Card phases & decision-making rounds  
+- **Frontend:** Next.js, React, CSS
+- **Backend:** Node.js, MongoDB, Pusher
+- **Language:** JavaScript
 
 ---
 
+## Features
+
+- Authentication system (login/signup)
+- Real-time lobby with player list
+- Role assignment (Judge, Honest, Corrupt)
+- Card phases and decision-making rounds
+- Real-time game state synchronization
+- Online multiplayer gameplay
+
+---
+
+## Current Problems / Known Issues
+
+The project is fully playable, but a few issues remain to be addressed:
+
+- **Production authentication redirect:** Signing in on the deployed Vercel version can currently redirect users to the local development URL (`localhost`) instead of the production website, but upon refreshing it recognizes the log in.
+- **UX polish:** Some parts of the interface could be made more intuitive and user-friendly.
+- **Production readiness:** The project was primarily developed and tested as a functional multiplayer prototype, so additional work is needed before considering it production-ready.
 
