@@ -35,7 +35,6 @@ The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
 
 The project is fully playable, but a few issues remain to be addressed:
 
-- **Production authentication redirect:** Signing in on the deployed Vercel version can currently redirect users to the local development URL (`localhost`) instead of the production website, but upon refreshing it recognizes the log in.
 - **UX polish:** Some parts of the interface could be made more intuitive and user-friendly.
 - **Production readiness:** The project was primarily developed and tested as a functional multiplayer prototype, so additional work is needed before considering it production-ready.
 - **Game Limitation:** The current WebSocket implementation is designed for a single active game and does not yet support multiple games running concurrently.   
