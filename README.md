@@ -12,6 +12,9 @@ The game has been **successfully playtested multiple times online**, and all cor
 
 The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
 
+## Demo
+https://github.com/user-attachments/assets/d96a91ac-9caa-4cee-803f-dcdf0dd8cac7
+
 ## Tech Stack
 
 - **Frontend:** Next.js, React, CSS
