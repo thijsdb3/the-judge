@@ -10,7 +10,7 @@ The game has been **successfully playtested multiple times online**, and all cor
 
 **The Judge** is a social deduction game for 6–13 players. Unlike other social deduction games such as Werewolves, Avalon, and Town of Salem, **The Judge** introduces a player who is confirmed to be on the honest team and must figure out which of the other players are corrupt.
 
-The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
+The rules can be found on the [Rules](https://the-judge-t15d.vercel.app/rules) tab.
 
 ## Demo
 The demo shows one complete game round:
