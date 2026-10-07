@@ -15,12 +15,12 @@ The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
 ## Demo
 This demo showcases one complete game round, including:
 
-*The Judge selecting a Partner
-*The Partner selecting a Paralegal
-*The Paralegal selecting an Associate
-*The Associate and Paralegal each discarding one card and passing the remaining two cards to the Partner
-*The Partner receiving all four cards and discarding the final card
-*The scoreboard updating to show that 1 Blue card has been played
+- The Judge selecting a Partner
+- The Partner selecting a Paralegal
+- The Paralegal selecting an Associate
+- The Associate and Paralegal each discarding one card and passing the remaining two cards to the Partner
+- The Partner receiving all four cards and discarding the final card
+- The scoreboard updating to show that 1 Blue card has been played
 
 https://github.com/user-attachments/assets/d96a91ac-9caa-4cee-803f-dcdf0dd8cac7
 
