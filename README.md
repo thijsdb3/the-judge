@@ -1,6 +1,6 @@
 # The Judge
 
-[The Judge](https://jlvt99ri0awti5rbkgag4hicnrrcbwc.vercel.app/) is fully functional website for the yet-unpublished social deduction game **The Judge**.
+[The Judge](https://jlvt99ri0awti5rbkgag4hicnrrcbwc.vercel.app/) is a fully functional website for the yet-unpublished social deduction game **The Judge**.
 
 The game has been **successfully playtested multiple times online**, and all core game mechanics are implemented.
 
