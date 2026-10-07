@@ -13,8 +13,7 @@ The game has been **successfully playtested multiple times online**, and all cor
 The rules can be found on the [Rules](https://the-judge.vercel.app/rules) tab.
 
 ## Demo
-This demo showcases one complete game round, including:
-
+The demo shows one complete game round:
 - The Judge selecting a Partner
 - The Partner selecting a Paralegal
 - The Paralegal selecting an Associate
